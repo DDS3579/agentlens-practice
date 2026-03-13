@@ -6,7 +6,7 @@ export const MODEL_MAP = {
   coordinator: 'llama-3.3-70b-versatile',
   security: 'llama-3.3-70b-versatile',
   writer: 'llama-3.1-8b-instant',
-  architecture: 'mixtral-8x7b-32768',
+  architecture: "llama-3.3-70b-versatile",
   default: 'llama-3.3-70b-versatile',
 };
 
