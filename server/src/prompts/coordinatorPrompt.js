@@ -22,12 +22,19 @@ export function buildPlanningPrompt(repoSummary, files) {
     ? repoSummary.securitySensitiveFiles.join(', ')
     : 'None identified';
 
+  // Handle languages as object (GitHub API) or array
+  const languagesStr = Array.isArray(repoSummary.languages) 
+    ? repoSummary.languages.join(', ')
+    : typeof repoSummary.languages === 'object' && repoSummary.languages !== null
+      ? Object.keys(repoSummary.languages).join(', ')
+      : 'Unknown';
+
   return `Analyze this repository and create an execution plan for the specialist agents.
 
 ## Repository Information
 - **Owner/Repo**: ${repoSummary.owner}/${repoSummary.repo}
 - **Project Type**: ${repoSummary.projectType || 'Unknown'}
-- **Languages**: ${repoSummary.languages?.join(', ') || 'Unknown'}
+- **Languages**: ${languagesStr}
 - **Total Files**: ${repoSummary.totalFiles || files.length}
 - **Files Being Analyzed**: ${repoSummary.analyzedFiles || files.length}
 
