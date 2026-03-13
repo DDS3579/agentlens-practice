@@ -1,15 +1,8 @@
+import Home from './pages/Home.jsx';
 import useAgentStore from './store/agentStore.js';
-import useAgentStream from './hooks/useAgentStream.js';
 
 function App() {
-  const { 
-    pipelinePhase, 
-    isAnalyzing, 
-    bugs, 
-    refactors 
-  } = useAgentStore();
-  
-  const { startAnalysis, cancelAnalysis } = useAgentStream();
+  const pipelinePhase = useAgentStore((state) => state.pipelinePhase);
 
   const getStatusPillClasses = () => {
     const baseClasses = 'px-3 py-1 rounded-full text-xs font-semibold';
@@ -39,56 +32,22 @@ function App() {
           <span className="text-2xl font-bold text-white">🔍 AgentLens</span>
           <span className="text-sm text-gray-400">Multi-Agent Code Analysis</span>
         </div>
-        <div className={getStatusPillClasses()}>
-          {pipelinePhase.charAt(0).toUpperCase() + pipelinePhase.slice(1)}
+        <div className="flex items-center gap-3">
+          <span className={getStatusPillClasses()}>
+            {pipelinePhase.charAt(0).toUpperCase() + pipelinePhase.slice(1)}
+          </span>
+          {pipelinePhase === 'complete' && (
+            <span className="text-green-400 text-sm font-medium">✅ Complete</span>
+          )}
         </div>
       </nav>
 
       {/* Main Content */}
-      <main className="flex-1 p-6 flex flex-col gap-6">
-        {/* Two Column Layout */}
-        <div className="flex gap-6 flex-1">
-          {/* Left Column - 55% */}
-          <div className="w-[55%] bg-[#1a1d2e] border border-[#2d3748] rounded-lg p-6 min-h-[400px] flex items-center justify-center">
-            <p className="text-gray-400 text-lg">GitHub Input + Code Viewer — Step 11</p>
-          </div>
-
-          {/* Right Column - 45% */}
-          <div className="w-[45%] bg-[#1a1d2e] border border-[#2d3748] rounded-lg p-6 min-h-[400px] flex items-center justify-center">
-            <p className="text-gray-400 text-lg">Agent Dashboard — Step 11</p>
-          </div>
-        </div>
-
-        {/* Bottom Panel */}
-        <div className="bg-[#1a1d2e] border border-[#2d3748] rounded-lg p-6 h-[200px] flex items-center justify-center">
-          <p className="text-gray-400 text-lg">Results Dashboard — Step 11</p>
+      <main className="flex-1 px-6 py-6">
+        <div className="max-w-[1400px] mx-auto">
+          <Home />
         </div>
       </main>
-
-      {/* Dev Panel */}
-      <div className="fixed bottom-4 right-4 bg-[#1a1d2e] border border-[#2d3748] rounded-lg p-4 z-[9999] font-mono text-xs">
-        <div className="text-gray-400 mb-2 font-semibold">Dev Panel</div>
-        <div className="space-y-1">
-          <div>
-            <span className="text-gray-500">isAnalyzing:</span>{' '}
-            <span className={isAnalyzing ? 'text-green-400' : 'text-red-400'}>
-              {isAnalyzing.toString()}
-            </span>
-          </div>
-          <div>
-            <span className="text-gray-500">pipelinePhase:</span>{' '}
-            <span className="text-blue-400">{pipelinePhase}</span>
-          </div>
-          <div>
-            <span className="text-gray-500">bugs:</span>{' '}
-            <span className="text-yellow-400">{bugs.length}</span>
-          </div>
-          <div>
-            <span className="text-gray-500">refactors:</span>{' '}
-            <span className="text-purple-400">{refactors.length}</span>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

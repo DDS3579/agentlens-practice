@@ -5,6 +5,44 @@ import { runAnalysisPipeline, getPipelineStatus } from '../orchestration/pipelin
 import { createSSEStream, sendError } from '../streaming/sseEmitter.js';
 import { getSession } from '../memory/sharedMemory.js';
 
+// Attaches SharedMemory events to an already-open SSE response
+// Does NOT set headers (they're already set)
+function attachMemoryToStream(res, memory) {
+  const send = (eventName, data) => {
+    if (!res.writableEnded) {
+      res.write(`event: ${eventName}\ndata: ${JSON.stringify(data)}\n\n`)
+    }
+  }
+
+  // Keepalive
+  const keepalive = setInterval(() => {
+    if (!res.writableEnded) {
+      res.write(': keepalive\n\n')
+    } else {
+      clearInterval(keepalive)
+    }
+  }, 15000)
+
+  memory.on('agent:status', (data) => send('agent_status', data))
+  memory.on('agent:finding', (data) => send('agent_finding', data))
+  memory.on('agent:communication', (data) => send('agent_communication', data))
+  memory.on('coordinator:plan', (data) => send('coordinator_plan', data))
+  memory.on('session:status', (data) => {
+    send('session_status', data)
+    if (data.status === 'complete' || data.status === 'error') {
+      send('analysis_complete', memory.getSnapshot())
+      clearInterval(keepalive)
+    }
+  })
+  memory.on('session:error', (data) => send('session_error', data))
+
+  res.on('close', () => {
+    clearInterval(keepalive)
+    memory.emitter.removeAllListeners()
+    console.log(`SSE client disconnected: ${memory.get('sessionId')}`)
+  })
+}
+
 const router = express.Router();
 
 /**
@@ -12,108 +50,96 @@ const router = express.Router();
  * Main analysis endpoint - accepts repo URL and streams results via SSE
  */
 router.post('/', async (req, res) => {
-  const { url, selectedPaths, branch: requestBranch } = req.body;
+  const { url, selectedPaths, branch } = req.body
 
-  // a. Validate request body
   if (!url) {
-    return res.status(400).json({ error: 'GitHub repository URL is required' });
+    return res.status(400).json({ error: 'GitHub repository URL is required' })
   }
 
-  // b. Set up SSE headers IMMEDIATELY before doing anything else
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.setHeader('X-Accel-Buffering', 'no');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.flushHeaders();
-
   // Handle client disconnect
-  req.on('close', () => {
-    console.log('Client disconnected from analysis stream');
-  });
+  req.on('close', () => console.log('Client disconnected from analysis stream'))
 
-  // Send initial event
-  res.write('event: pipeline_start\ndata: ' + JSON.stringify({
-    message: 'Fetching repository...',
-    timestamp: Date.now()
-  }) + '\n\n');
-
-  // c. Wrap everything else in try/catch
   try {
     // Step 1: Parse URL
-    const parsed = parseRepoUrl(url);
-    const owner = parsed.owner;
-    const repo = parsed.repo;
-    const branch = requestBranch || parsed.branch || 'main';
+    const { owner, repo, branch: detectedBranch } = parseRepoUrl(url)
+    const repoBranch = branch || detectedBranch
 
-    // Step 2: Send status update
+    // Step 2: Set SSE headers NOW — before any await that sends data
+    res.setHeader('Content-Type', 'text/event-stream')
+    res.setHeader('Cache-Control', 'no-cache')
+    res.setHeader('Connection', 'keep-alive')
+    res.setHeader('X-Accel-Buffering', 'no')
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.flushHeaders()
+
+    // Step 3: Send initial status
     res.write('event: pipeline_start\ndata: ' + JSON.stringify({
       message: `Accessing ${owner}/${repo}...`,
-      owner,
-      repo,
-      branch
-    }) + '\n\n');
+      owner, repo, branch: repoBranch
+    }) + '\n\n')
 
-    // Step 3: Fetch file tree
-    const treeItems = await getRepoTree(owner, repo, branch);
+    // Step 4: Fetch file tree
+    const treeItems = await getRepoTree(owner, repo, repoBranch)
 
-    // Step 4: Fetch actual file contents
     res.write('event: pipeline_start\ndata: ' + JSON.stringify({
-      message: `Fetching ${selectedPaths?.length || 'all'} files...`
-    }) + '\n\n');
+      message: `Fetching files...`,
+    }) + '\n\n')
 
-    const files = await fetchRepoFiles(owner, repo, branch, selectedPaths || []);
+    // Step 5: Fetch files with cap
+    const fetchPromise = fetchRepoFiles(owner, repo, repoBranch, selectedPaths || [])
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('File fetch timed out after 30s')), 30000)
+    )
+    const files = await Promise.race([fetchPromise, timeoutPromise])
 
     if (files.length === 0) {
       res.write('event: error\ndata: ' + JSON.stringify({
         error: 'No analyzable files found in repository'
-      }) + '\n\n');
-      res.end();
-      return;
+      }) + '\n\n')
+      res.end()
+      return
     }
 
-    // Step 5: Build repo summary
-    const repoSummary = await summarizeRepo(owner, repo, branch, treeItems, files);
+    // Step 6: Build repo summary
+    const repoSummary = await summarizeRepo(owner, repo, repoBranch, treeItems, files)
 
-    // Step 6: Send repo info to frontend
     res.write('event: repo_ready\ndata: ' + JSON.stringify({
       summary: repoSummary,
       filesCount: files.length
-    }) + '\n\n');
+    }) + '\n\n')
 
-    // Step 7: Run the pipeline
-    let finalResults = null;
-
-    finalResults = await runAnalysisPipeline(
+    // Step 7: Run pipeline
+    // IMPORTANT: onSession callback must NOT call setupSSEHeaders again
+    // We pass the already-open res directly — createSSEStream will skip header setup
+    const finalResults = await runAnalysisPipeline(
       files,
       repoSummary,
       (sessionId, memory) => {
-        // Attach SSE stream to this memory instance
-        createSSEStream(res, memory);
+        // Attach memory events to the already-open SSE stream
+        // WITHOUT calling setupSSEHeaders again
+        attachMemoryToStream(res, memory)
 
-        // Send session ID to frontend
         res.write('event: session_created\ndata: ' + JSON.stringify({
           sessionId
-        }) + '\n\n');
+        }) + '\n\n')
       }
-    );
+    )
 
-    // Step 8: Send final results
     if (!res.writableEnded) {
-      res.write('event: final_results\ndata: ' + JSON.stringify(finalResults) + '\n\n');
-      res.end();
+      res.write('event: final_results\ndata: ' + JSON.stringify(finalResults) + '\n\n')
+      res.end()
     }
 
   } catch (error) {
-    console.error('Analysis route error:', error);
+    console.error('Analysis route error:', error)
     if (!res.writableEnded) {
       res.write('event: error\ndata: ' + JSON.stringify({
         error: error.message || 'Analysis failed'
-      }) + '\n\n');
-      res.end();
+      }) + '\n\n')
+      res.end()
     }
   }
-});
+})
 
 /**
  * GET /api/analyze/status/:sessionId

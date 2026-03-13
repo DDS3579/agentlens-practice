@@ -1,8 +1,12 @@
 import { Octokit } from '@octokit/rest';
 
 export function createOctokitClient() {
+  const token = process.env.GITHUB_TOKEN;
+  if (!token) {
+    console.warn('Warning: GITHUB_TOKEN not set. API rate limits will be lower.');
+  }
   return new Octokit({
-    auth: process.env.GITHUB_TOKEN
+    auth: token
   });
 }
 
@@ -173,6 +177,9 @@ export async function fetchRepoFiles(owner, repo, branch = 'main', selectedPaths
     
     return true;
   });
+  
+  // Cap files to prevent token overload
+  filesToFetch = filesToFetch.slice(0, 15);
   
   const results = [];
   const total = filesToFetch.length;
