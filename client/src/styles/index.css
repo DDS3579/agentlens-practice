@@ -1,1 +1,106 @@
 @import "tailwindcss";
+
+@layer base {
+  body {
+    background: #0f1117;
+    color: #e2e8f0;
+    font-family: Inter, system-ui, sans-serif;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #1a1d2e;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #4a5568;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #718096;
+  }
+}
+
+@layer components {
+  .agent-card {
+    background: #1a1d2e;
+    border: 1px solid #2d3748;
+    border-radius: 8px;
+    padding: 16px;
+  }
+
+  .severity-critical {
+    background: #7f1d1d;
+    color: #fca5a5;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .severity-high {
+    background: #7c2d12;
+    color: #fdba74;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .severity-medium {
+    background: #713f12;
+    color: #fde68a;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .severity-low {
+    background: #1e3a5f;
+    color: #93c5fd;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .status-thinking {
+    color: #fbbf24;
+    animation: pulse-soft 1.5s infinite;
+  }
+
+  .status-acting {
+    color: #60a5fa;
+    animation: pulse-soft 1.5s infinite;
+  }
+
+  .status-complete {
+    color: #34d399;
+  }
+
+  .status-error {
+    color: #f87171;
+  }
+
+  .status-idle {
+    color: #6b7280;
+  }
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
