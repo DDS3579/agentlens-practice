@@ -3,9 +3,10 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import analyzeRoute from './routes/analyzeRoute.js';  // Commented out until created
+import analyzeRoute from './routes/analyzeRoute.js';
 import githubRoute from './routes/githubRoute.js';
-import { checkProviderHealth } from './llm/llmService.js'
+import { checkProviderHealth } from './llm/llmService.js';
+import { getActiveSessions } from './memory/sharedMemory.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -17,25 +18,56 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-app.use('/api/github', githubRoute);
-app.use('/api/analyze', analyzeRoute);  // Commented out until created
-
+// Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    activeSessions: getActiveSessions().length,
+    uptime: Math.round(process.uptime()) + 's'
+  });
 });
 
-app.get('/api/llm/health', async (req, res) => {
-  const health = await checkProviderHealth()
-  res.json(health)
-})
+// Status endpoint with provider health and memory info
+app.get('/api/status', async (req, res) => {
+  try {
+    const healthResult = await checkProviderHealth();
+    res.json({
+      providers: healthResult,
+      activeSessions: getActiveSessions(),
+      memory: {
+        heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB',
+        heapTotal: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + 'MB'
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
+// Mount routes
+app.use('/api/github', githubRoute);
+app.use('/api/analyze', analyzeRoute);
+
+// Global error handler
 app.use((err, req, res, next) => {
-  res.status(500).json({ error: err.message });
+  console.error('Server error:', err.message);
+  res.status(500).json({
+    error: err.message,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
 });
 
 app.listen(PORT, () => {
-  console.log(`AgentLens server running on port ${PORT}`);
+  console.log('\n🔍 AgentLens Server');
+  console.log('==================');
+  console.log('Port:', PORT);
+  console.log('Mode:', process.env.NODE_ENV || 'development');
+  console.log('Frontend:', 'http://localhost:5173');
+  console.log('Health:', `http://localhost:${PORT}/health`);
+  console.log('==================\n');
 });
+
 
 // Actual required version of the index.js end
 
