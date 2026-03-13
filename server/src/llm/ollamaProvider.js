@@ -3,11 +3,11 @@
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
 
 export const OLLAMA_MODEL_MAP = {
-  coordinator: 'llama3:8b',
+  coordinator: 'llama3.1:8b',
   security: 'codellama:7b',
-  writer: 'llama3:8b',
-  architecture: 'llama3:8b',
-  default: 'llama3:8b',
+  writer: 'llama3.1:8b',
+  architecture: 'llama3.1:8b',
+  default: 'llama3.1:8b',
 };
 
 export async function isOllamaRunning() {
