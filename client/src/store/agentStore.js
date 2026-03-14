@@ -461,173 +461,269 @@ const useAgentStore = create((set, get) => ({
   },
 
   // Handle SSE events from the pipeline
+  // Maps EXACTLY to backend events from sseEmitter.js and analyzeRoute.js
   handleSSEEvent: (eventName, data) => {
     const { addActivity, updateAgent, setPipelinePhase, saveAnalysisToBackend } = get()
 
     switch (eventName) {
-      case 'session_start':
+      // ── Backend: analyzeRoute sends "pipeline_start" at Step 3 ──
+      case 'pipeline_start':
         set({
-          sessionId: data.sessionId,
           startTime: Date.now(),
           isAnalyzing: true,
           error: null
         })
-        setPipelinePhase('fetching', 'Starting analysis...')
+        setPipelinePhase('fetching', data.message || 'Starting analysis...')
         addActivity({
           type: 'system',
           agent: 'system',
-          message: `Analysis session started: ${data.sessionId}`
+          message: data.message || `Accessing ${data.owner}/${data.repo}...`
         })
         break
 
+      // ── Backend: analyzeRoute sends "repo_ready" at Step 6 ──
+      case 'repo_ready':
+        set({ repoInfo: data.summary })
+        setPipelinePhase('fetching', `Fetched ${data.filesCount || 0} files`)
+        addActivity({
+          type: 'info',
+          agent: 'system',
+          message: `Repository loaded: ${data.summary?.repo || 'unknown'} (${data.filesCount || 0} files)`
+        })
+        break
+
+      // ── Backend: analyzeRoute sends "session_created" in onSession callback ──
+      case 'session_created':
+        set({ sessionId: data.sessionId })
+        addActivity({
+          type: 'system',
+          agent: 'system',
+          message: `Session created: ${data.sessionId}`
+        })
+        break
+
+      // ── Backend: SSE emitter sends "connected" on initial connection ──
+      case 'connected':
+        // Initial connection handshake — just acknowledge
+        break
+
+      // ── Backend: memory.setAgentStatus → "agent_status" ──
+      // data shape: { agentName, status, currentAction }
+      case 'agent_status': {
+        const agentName = data.agentName || data.agent
+        if (agentName && get().agents[agentName]) {
+          const isRunning = data.status === 'acting' || data.status === 'thinking' || data.status === 'analyzing'
+          updateAgent(agentName, {
+            status: isRunning ? 'running' : data.status,
+            message: data.currentAction || data.status
+          })
+          if (isRunning) {
+            setPipelinePhase('analyzing', `${agentName} agent: ${data.currentAction || 'working...'}`)
+          }
+        }
+        addActivity({
+          type: 'agent_start',
+          agent: agentName || 'system',
+          message: data.currentAction || `${agentName}: ${data.status}`
+        })
+        break
+      }
+
+      // ── Backend: memory.addBug/addRefactor/setDocumentation → "agent_finding" ──
+      // data shape: { type: 'bug'|'refactor'|'documentation', data: {...} }
+      case 'agent_finding': {
+        const updates = {}
+        let activityMessage = ''
+        let findingAgent = ''
+
+        if (data.type === 'bug') {
+          const currentBugs = get().securitySummary?.bugs || []
+          updates.securitySummary = {
+            ...get().securitySummary,
+            bugs: [...currentBugs, data.data],
+            totalIssues: currentBugs.length + 1
+          }
+          findingAgent = 'security'
+          activityMessage = `Found bug: ${data.data?.title || data.data?.message || 'Security issue'}`
+        } else if (data.type === 'refactor') {
+          const currentRefactors = get().architectureResult?.refactors || []
+          updates.architectureResult = {
+            ...get().architectureResult,
+            refactors: [...currentRefactors, data.data]
+          }
+          findingAgent = 'architecture'
+          activityMessage = `Found: ${data.data?.title || data.data?.suggestion || 'Refactor suggestion'}`
+        } else if (data.type === 'documentation') {
+          updates.writerResult = data.data
+          findingAgent = 'writer'
+          activityMessage = 'Documentation generated'
+          updateAgent('writer', { status: 'complete', result: data.data })
+        }
+
+        set(updates)
+        addActivity({
+          type: 'result',
+          agent: findingAgent || 'system',
+          message: activityMessage
+        })
+        break
+      }
+
+      // ── Backend: memory.addMessage → "agent_communication" ──
+      // data shape: { fromAgent, toAgent, content, type }
+      case 'agent_communication':
+        addActivity({
+          type: 'info',
+          agent: data.fromAgent || 'system',
+          message: `→ ${data.toAgent}: ${(data.content || '').substring(0, 120)}`
+        })
+        break
+
+      // ── Backend: memory.setPlan → "coordinator_plan" ──
+      // data shape: { plan: {...} }
+      case 'coordinator_plan':
+        set({ plan: data.plan || data })
+        setPipelinePhase('planning', 'Execution plan created')
+        updateAgent('coordinator', { status: 'complete', result: data.plan || data })
+        addActivity({
+          type: 'plan',
+          agent: 'coordinator',
+          message: data.plan?.planSummary || 'Created analysis execution plan'
+        })
+        break
+
+      // ── Backend: memory.setStatus → "session_status" ──
+      // data shape: { status: 'complete'|'error', sessionId }
+      // NOTE: backend sends 'complete' (NOT 'completed')
       case 'session_status':
-        if (data.status === 'completed') {
+        if (data.status === 'complete') {
           set({ endTime: Date.now() })
-          setPipelinePhase('complete', 'Analysis complete!')
+          setPipelinePhase('compiling', 'Waiting for final results...')
           addActivity({
             type: 'system',
             agent: 'system',
-            message: 'Analysis completed successfully'
+            message: 'Analysis completed, compiling results...'
           })
-          // Auto-save to backend
-          setTimeout(() => saveAnalysisToBackend(), 100)
         } else if (data.status === 'error') {
-          set({ 
+          set({
             error: data.error || 'An error occurred',
             isAnalyzing: false,
             endTime: Date.now()
           })
           setPipelinePhase('error', data.error || 'An error occurred')
+          addActivity({
+            type: 'error',
+            agent: 'system',
+            message: data.error || 'An error occurred'
+          })
+        } else if (data.status === 'analyzing') {
+          setPipelinePhase('analyzing', 'Agents are analyzing...')
         }
         break
 
-      case 'session_complete':
-        set({ endTime: Date.now() })
-        setPipelinePhase('complete', 'Analysis complete!')
+      // ── Backend: sseEmitter sends "analysis_complete" with memory.getSnapshot() ──
+      // data shape: full snapshot { bugs, documentation, refactors, plan, agentStatuses, ... }
+      case 'analysis_complete': {
+        const snapshot = data
+        const updates = {}
+
+        if (snapshot.bugs && snapshot.bugs.length > 0) {
+          updates.securitySummary = {
+            ...get().securitySummary,
+            bugs: snapshot.bugs,
+            totalIssues: snapshot.bugs.length
+          }
+          updateAgent('security', { status: 'complete' })
+        }
+        if (snapshot.documentation) {
+          updates.writerResult = snapshot.documentation
+          updateAgent('writer', { status: 'complete' })
+        }
+        if (snapshot.refactors && snapshot.refactors.length > 0) {
+          updates.architectureResult = {
+            ...get().architectureResult,
+            refactors: snapshot.refactors
+          }
+          updateAgent('architecture', { status: 'complete' })
+        }
+        if (snapshot.plan) {
+          updates.plan = snapshot.plan
+        }
+
+        set(updates)
         addActivity({
           type: 'system',
           agent: 'system',
-          message: 'All agents completed analysis'
+          message: 'Analysis snapshot received'
         })
-        // Auto-save to backend
+        break
+      }
+
+      // ── Backend: analyzeRoute sends "final_results" as last event before res.end() ──
+      // data shape: the full compiled results object from runAnalysisPipeline
+      case 'final_results': {
+        const results = data
+        const finalUpdates = { endTime: Date.now() }
+
+        // Extract results from whatever shape the pipeline returns
+        if (results.security) {
+          finalUpdates.securitySummary = results.security.summary || results.security
+          updateAgent('security', { status: 'complete', result: results.security })
+        }
+        if (results.documentation || results.writer) {
+          finalUpdates.writerResult = results.documentation || results.writer
+          updateAgent('writer', { status: 'complete', result: results.documentation || results.writer })
+        }
+        if (results.architecture) {
+          finalUpdates.architectureResult = results.architecture.result || results.architecture
+          updateAgent('architecture', { status: 'complete', result: results.architecture })
+        }
+        if (results.compilation || results.summary) {
+          finalUpdates.compilationResult = results.compilation || results.summary
+        }
+
+        // Also handle flat snapshot shape (from getSnapshot)
+        if (results.bugs && !results.security) {
+          finalUpdates.securitySummary = {
+            bugs: results.bugs,
+            totalIssues: results.bugs.length
+          }
+        }
+        if (results.refactors && !results.architecture) {
+          finalUpdates.architectureResult = { refactors: results.refactors }
+        }
+
+        set(finalUpdates)
+        setPipelinePhase('complete', 'Analysis complete!')
+        set({ isAnalyzing: false })
+
+        addActivity({
+          type: 'system',
+          agent: 'system',
+          message: '✅ Analysis complete — results are ready!'
+        })
+
+        // Auto-save
         setTimeout(() => saveAnalysisToBackend(), 100)
         break
+      }
 
-      case 'repo_info':
-        set({ repoInfo: data })
-        setPipelinePhase('fetching', `Fetched ${data.files?.length || 0} files`)
-        addActivity({
-          type: 'info',
-          agent: 'system',
-          message: `Repository loaded: ${data.name || data.repoName} (${data.files?.length || 0} files)`
+      // ── Backend: sseEmitter sends "session_error" ──
+      case 'session_error':
+        set({
+          error: data.error || 'An error occurred',
+          isAnalyzing: false,
+          endTime: Date.now()
         })
-        break
-
-      case 'plan':
-      case 'coordinator_plan':
-        set({ plan: data })
-        setPipelinePhase('planning', 'Execution plan created')
-        updateAgent('coordinator', { status: 'complete', result: data })
-        addActivity({
-          type: 'plan',
-          agent: 'coordinator',
-          message: 'Created analysis execution plan'
-        })
-        break
-
-      case 'agent_start':
-        updateAgent(data.agent, { status: 'running', message: data.message || 'Starting...' })
-        if (data.agent !== 'coordinator') {
-          setPipelinePhase('analyzing', `${data.agent} agent running...`)
-        }
-        addActivity({
-          type: 'agent_start',
-          agent: data.agent,
-          message: `${data.agent} agent started`
-        })
-        break
-
-      case 'agent_progress':
-        updateAgent(data.agent, { message: data.message })
-        addActivity({
-          type: 'progress',
-          agent: data.agent,
-          message: data.message
-        })
-        break
-
-      case 'agent_complete':
-        updateAgent(data.agent, { status: 'complete', result: data.result })
-        addActivity({
-          type: 'agent_complete',
-          agent: data.agent,
-          message: `${data.agent} agent completed`
-        })
-        break
-
-      case 'agent_error':
-        updateAgent(data.agent, { status: 'error', message: data.error })
+        setPipelinePhase('error', data.error || 'An error occurred')
         addActivity({
           type: 'error',
-          agent: data.agent,
-          message: `Error: ${data.error}`
+          agent: 'system',
+          message: data.error || 'An error occurred'
         })
         break
 
-      case 'security_result':
-      case 'security_summary':
-        set({ securitySummary: data })
-        updateAgent('security', { status: 'complete', result: data })
-        addActivity({
-          type: 'result',
-          agent: 'security',
-          message: `Found ${data.totalIssues || data.issues?.length || 0} security issues`
-        })
-        break
-
-      case 'writer_result':
-      case 'documentation':
-        set({ writerResult: data })
-        updateAgent('writer', { status: 'complete', result: data })
-        addActivity({
-          type: 'result',
-          agent: 'writer',
-          message: 'Documentation generated'
-        })
-        break
-
-      case 'architecture_result':
-      case 'architecture_review':
-        set({ architectureResult: data })
-        updateAgent('architecture', { status: 'complete', result: data })
-        addActivity({
-          type: 'result',
-          agent: 'architecture',
-          message: `Architecture score: ${data.score || 'N/A'}/100`
-        })
-        break
-
-      case 'compilation_result':
-      case 'final_report':
-        set({ compilationResult: data })
-        setPipelinePhase('compiling', 'Compiling final report...')
-        addActivity({
-          type: 'result',
-          agent: 'coordinator',
-          message: 'Final report compiled'
-        })
-        break
-
-      case 'chunk':
-      case 'stream_chunk':
-        // Handle streaming text chunks
-        addActivity({
-          type: 'stream',
-          agent: data.agent || 'system',
-          message: data.content || data.text
-        })
-        break
-
+      // ── Backend: analyzeRoute sends "error" on catch ──
       case 'error':
         set({
           error: data.message || data.error || 'An error occurred',
@@ -641,8 +737,12 @@ const useAgentStore = create((set, get) => ({
         })
         break
 
+      // ── Backend: sseEmitter "memory_update" for key updates ──
+      case 'memory_update':
+        // Optional: handle specific key updates if needed
+        break
+
       default:
-        // Log unhandled events for debugging
         console.log('[AgentStore] Unhandled event:', eventName, data)
         break
     }

@@ -81,15 +81,24 @@ function SavedAnalysis() {
         if (plan) {
           useAgentStore.setState({ plan })
         }
+
+        // Handle V1 saved data vs V2 saved data
         if (bugs) {
-          useAgentStore.setState({ securitySummary: bugs })
+          useAgentStore.setState({
+            securitySummary: Array.isArray(bugs) ? { bugs, totalIssues: bugs.length } : bugs
+          })
         }
+
         if (documentation) {
           useAgentStore.setState({ writerResult: documentation })
         }
+
         if (refactors) {
-          useAgentStore.setState({ architectureResult: refactors })
+          useAgentStore.setState({
+            architectureResult: Array.isArray(refactors) ? { refactors } : refactors
+          })
         }
+
         if (summary) {
           useAgentStore.setState({ compilationResult: summary })
         }

@@ -2,7 +2,9 @@ import { useState } from 'react';
 import useAgentStore from '../../store/agentStore.js';
 
 const ArchitectureTab = () => {
-  const { refactors, bugs, architectureResult, compilationResult } = useAgentStore();
+  const { securitySummary, architectureResult, compilationResult } = useAgentStore();
+  const refactors = architectureResult?.refactors || [];
+  const bugs = securitySummary?.bugs || [];
   const [impactFilter, setImpactFilter] = useState('all');
   const [sortBy, setSortBy] = useState('impact');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -83,7 +85,7 @@ const ArchitectureTab = () => {
   const findBugById = (bugId) => bugs.find(b => b.id === bugId);
 
   // Count quick wins
-  const quickWinsCount = architectureResult?.quickWins?.length || 
+  const quickWinsCount = architectureResult?.quickWins?.length ||
     refactors.filter(r => {
       if (!r.effort) return false;
       const match = r.effort.match(/(\d+)/);
@@ -131,7 +133,7 @@ const ArchitectureTab = () => {
                   "{compilationResult.finalVerdict}"
                 </p>
               )}
-              
+
               {/* Cross-cutting Concerns */}
               {compilationResult.crossCuttingConcerns && compilationResult.crossCuttingConcerns.length > 0 && (
                 <div className="mt-4">
@@ -207,11 +209,10 @@ const ArchitectureTab = () => {
                 <button
                   key={impact}
                   onClick={() => setImpactFilter(impact)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    impactFilter === impact
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${impactFilter === impact
                       ? 'bg-indigo-600 text-white'
                       : 'bg-[#1a1d2e] text-gray-300 hover:bg-[#252a3e] border border-[#2d3748]'
-                  }`}
+                    }`}
                 >
                   {impact.charAt(0).toUpperCase() + impact.slice(1)}
                 </button>
@@ -239,11 +240,10 @@ const ArchitectureTab = () => {
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setCategoryFilter('all')}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                categoryFilter === 'all'
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${categoryFilter === 'all'
                   ? 'bg-indigo-600 text-white'
                   : 'bg-[#1a1d2e] text-gray-400 hover:bg-[#252a3e] border border-[#2d3748]'
-              }`}
+                }`}
             >
               All Categories
             </button>
@@ -251,11 +251,10 @@ const ArchitectureTab = () => {
               <button
                 key={category}
                 onClick={() => setCategoryFilter(category)}
-                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                  categoryFilter.toLowerCase() === category.toLowerCase()
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${categoryFilter.toLowerCase() === category.toLowerCase()
                     ? 'bg-indigo-600 text-white'
                     : `${getCategoryColor(category)} hover:opacity-80`
-                }`}
+                  }`}
               >
                 {category}
               </button>

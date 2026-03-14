@@ -6,7 +6,11 @@ import ArchitectureTab from './ArchitectureTab.jsx';
 import useAgentStore from '../../store/agentStore.js';
 
 const ResultsTabs = () => {
-  const { bugs, documentation, refactors, finalResults, reset } = useAgentStore();
+  const { securitySummary, writerResult, architectureResult, compilationResult, reset } = useAgentStore();
+  const bugs = securitySummary?.bugs || [];
+  const documentation = writerResult;
+  const refactors = architectureResult?.refactors || [];
+  const finalResults = compilationResult;
   const [activeTab, setActiveTab] = useState('security');
 
   const tabs = [
@@ -88,11 +92,10 @@ const ResultsTabs = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`relative px-4 py-3 text-sm font-medium transition-colors flex items-center gap-2 ${
-                activeTab === tab.id
+              className={`relative px-4 py-3 text-sm font-medium transition-colors flex items-center gap-2 ${activeTab === tab.id
                   ? 'text-white'
                   : 'text-gray-400 hover:text-gray-200'
-              }`}
+                }`}
             >
               <span>{tab.icon}</span>
               <span>{tab.label}</span>

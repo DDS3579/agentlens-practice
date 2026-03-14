@@ -2,7 +2,8 @@ import { useState } from 'react';
 import useAgentStore from '../../store/agentStore.js';
 
 const SecurityTab = () => {
-  const { bugs, securitySummary, compilationResult } = useAgentStore();
+  const { securitySummary, compilationResult } = useAgentStore();
+  const bugs = securitySummary?.bugs || [];
   const [activeFilter, setActiveFilter] = useState('all');
   const [expandedBugs, setExpandedBugs] = useState(new Set());
 
@@ -15,13 +16,13 @@ const SecurityTab = () => {
   };
 
   // Filter bugs based on active filter
-  const filteredBugs = activeFilter === 'all' 
-    ? bugs 
+  const filteredBugs = activeFilter === 'all'
+    ? bugs
     : bugs.filter(b => b.severity === activeFilter);
 
   // Get security score
-  const securityScore = compilationResult?.scoreBreakdown?.security 
-    || securitySummary?.overallSecurityScore 
+  const securityScore = compilationResult?.scoreBreakdown?.security
+    || securitySummary?.overallSecurityScore
     || null;
 
   // Get score circle color
@@ -109,51 +110,46 @@ const SecurityTab = () => {
       <div className="flex gap-2 flex-wrap">
         <button
           onClick={() => setActiveFilter('all')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            activeFilter === 'all'
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeFilter === 'all'
               ? 'bg-indigo-600 text-white'
               : 'bg-[#1a1d2e] text-gray-300 hover:bg-[#252a3e] border border-[#2d3748]'
-          }`}
+            }`}
         >
           All ({bugs.length})
         </button>
         <button
           onClick={() => setActiveFilter('critical')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            activeFilter === 'critical'
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeFilter === 'critical'
               ? 'bg-indigo-600 text-white'
               : 'bg-[#1a1d2e] text-gray-300 hover:bg-[#252a3e] border border-[#2d3748]'
-          }`}
+            }`}
         >
           Critical ({severityCounts.critical})
         </button>
         <button
           onClick={() => setActiveFilter('high')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            activeFilter === 'high'
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeFilter === 'high'
               ? 'bg-indigo-600 text-white'
               : 'bg-[#1a1d2e] text-gray-300 hover:bg-[#252a3e] border border-[#2d3748]'
-          }`}
+            }`}
         >
           High ({severityCounts.high})
         </button>
         <button
           onClick={() => setActiveFilter('medium')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            activeFilter === 'medium'
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeFilter === 'medium'
               ? 'bg-indigo-600 text-white'
               : 'bg-[#1a1d2e] text-gray-300 hover:bg-[#252a3e] border border-[#2d3748]'
-          }`}
+            }`}
         >
           Medium ({severityCounts.medium})
         </button>
         <button
           onClick={() => setActiveFilter('low')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            activeFilter === 'low'
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeFilter === 'low'
               ? 'bg-indigo-600 text-white'
               : 'bg-[#1a1d2e] text-gray-300 hover:bg-[#252a3e] border border-[#2d3748]'
-          }`}
+            }`}
         >
           Low ({severityCounts.low})
         </button>

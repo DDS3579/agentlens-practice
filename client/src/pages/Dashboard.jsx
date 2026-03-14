@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import useAuth from "../hooks/useAuth.js";
 import useAgentStore from "../store/agentStore.js";
+import useFixStore from "../store/fixStore.js";
 import GithubInput from "../components/github/GithubInput.jsx";
 import AgentCard from "../components/agents/AgentCard.jsx";
 import AgentFlowGraph from "../components/agents/AgentFlowGraph.jsx";
@@ -8,6 +9,10 @@ import ActivityFeed from "../components/agents/ActivityFeed.jsx";
 import ResultsTabs from "../components/results/ResultsTabs.jsx";
 import UsageIndicator from "../components/billing/UsageIndicator.jsx";
 import UpgradeModal from "../components/billing/UpgradeModal.jsx";
+import MonacoEditor from "../components/editor/MonacoEditor.jsx";
+import FileTabBar from "../components/editor/FileTabBar.jsx";
+import DiffViewer from "../components/editor/DiffViewer.jsx";
+import FixAgent from "../components/fix/FixAgent.jsx";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,6 +41,7 @@ function Dashboard() {
     canRunAnalysis,
     analysesRemaining,
     isLoadingProfile,
+    getToken,
   } = useAuth();
 
   const {
@@ -51,8 +57,29 @@ function Dashboard() {
     resetPipeline,
   } = useAgentStore();
 
+  const {
+    openFiles,
+    activeFilePath,
+    unsavedFiles,
+    showDiff,
+    diffData,
+    openFile,
+    closeFile,
+    setActiveFile,
+    updateFileContent,
+    saveFile,
+    resetFile,
+    hideDiffView,
+  } = useFixStore();
+
+  // Set token getter for agentStore to use
+  useEffect(() => {
+    window.__agentlens_getToken = getToken;
+  }, [getToken]);
+
   const analysesUsed = userProfile?.analyses_this_month || 0;
   const hasResults = pipelinePhase === "complete";
+  const securityAgentComplete = agents?.security?.status === "complete";
 
   const currentDate = new Date().toLocaleDateString("en-US", {
     weekday: "long",
@@ -68,7 +95,74 @@ function Dashboard() {
 
   const handleNewAnalysis = () => {
     resetPipeline();
+    useFixStore.getState().resetFixStore();
   };
+
+  const handleFixAgentUpgrade = () => {
+    setUpgradeFeature({
+      name: "Auto-Fix Agent",
+      description:
+        "Let AI automatically fix all detected bugs in your code. Watch as fixes are applied in real-time with full diff previews.",
+    });
+    setShowUpgradeModal(true);
+  };
+
+  const handleEditorUpgrade = () => {
+    setUpgradeFeature({
+      name: "Code Editor",
+      description:
+        "Edit your code directly in the browser with full syntax highlighting and save your changes.",
+    });
+    setShowUpgradeModal(true);
+  };
+
+  // File tab handlers
+  const openFileTabs = Object.keys(openFiles).map((path) => ({
+    path,
+    hasChanges: unsavedFiles.has(path),
+    isActive: path === activeFilePath,
+  }));
+
+  const handleTabClick = (path) => {
+    setActiveFile(path);
+  };
+
+  const handleTabClose = (path) => {
+    closeFile(path);
+  };
+
+  const handleTabSave = (path) => {
+    saveFile(path);
+  };
+
+  const handleEditorChange = (newContent) => {
+    if (activeFilePath) {
+      updateFileContent(activeFilePath, newContent);
+    }
+  };
+
+  const handleEditorSave = (content) => {
+    if (activeFilePath) {
+      saveFile(activeFilePath);
+    }
+  };
+
+  const handleDiffAccept = () => {
+    if (diffData && diffData.bugId) {
+      // Apply the modified content
+      if (diffData.filename && openFiles[diffData.filename]) {
+        updateFileContent(diffData.filename, diffData.modified);
+      }
+      hideDiffView();
+    }
+  };
+
+  const handleDiffReject = () => {
+    hideDiffView();
+  };
+
+  // Get active file data
+  const activeFile = activeFilePath ? openFiles[activeFilePath] : null;
 
   // Calculate stats from results
   const stats = {
@@ -285,11 +379,56 @@ function Dashboard() {
               </Card>
             )}
 
+            {/* File Editor Section */}
+            {openFileTabs.length > 0 && (
+              <Card className="bg-gray-900 border-white/10 overflow-hidden">
+                <CardContent className="p-0">
+                  <FileTabBar
+                    tabs={openFileTabs}
+                    onTabClick={handleTabClick}
+                    onTabClose={handleTabClose}
+                    onTabSave={handleTabSave}
+                  />
+                  {showDiff && diffData ? (
+                    <DiffViewer
+                      original={diffData.original}
+                      modified={diffData.modified}
+                      filename={diffData.filename}
+                      language={diffData.language}
+                      onAccept={handleDiffAccept}
+                      onReject={handleDiffReject}
+                      height="500px"
+                    />
+                  ) : activeFile ? (
+                    <MonacoEditor
+                      file={{
+                        path: activeFilePath,
+                        content: activeFile.current,
+                        language: activeFile.language,
+                      }}
+                      isPro={isPro}
+                      onChange={handleEditorChange}
+                      onSave={handleEditorSave}
+                      onUpgradeClick={handleEditorUpgrade}
+                      initialContent={activeFile.original}
+                      height="500px"
+                      showToolbar={true}
+                    />
+                  ) : null}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Results Tabs */}
             {hasResults && (
               <div data-results>
                 <ResultsTabs />
               </div>
+            )}
+
+            {/* Fix Agent - Shows after security agent completes */}
+            {securityAgentComplete && (
+              <FixAgent onUpgradeClick={handleFixAgentUpgrade} />
             )}
           </div>
 

@@ -6,8 +6,14 @@ import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import useAgentStore from "../../store/agentStore.js";
 
 const DocumentationTab = () => {
-  const { documentation, documentationMeta, repoSummary, bugs } =
-    useAgentStore();
+  const { writerResult, repoInfo, securitySummary } = useAgentStore();
+
+  const documentation = typeof writerResult === 'string'
+    ? writerResult
+    : writerResult?.content || writerResult?.documentation || writerResult?.markdown || '';
+  const documentationMeta = writerResult?.meta || null;
+  const repoSummary = repoInfo;
+  const bugs = securitySummary?.bugs || [];
   const [viewMode, setViewMode] = useState("rendered");
   const [copied, setCopied] = useState(false);
   const contentRef = useRef(null);
@@ -275,21 +281,19 @@ const DocumentationTab = () => {
       <div className="flex items-center gap-2">
         <button
           onClick={() => setViewMode("rendered")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            viewMode === "rendered"
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "rendered"
               ? "bg-indigo-600 text-white"
               : "bg-[#1a1d2e] text-gray-300 hover:bg-[#252a3e] border border-[#2d3748]"
-          }`}
+            }`}
         >
           Rendered
         </button>
         <button
           onClick={() => setViewMode("raw")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            viewMode === "raw"
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "raw"
               ? "bg-indigo-600 text-white"
               : "bg-[#1a1d2e] text-gray-300 hover:bg-[#252a3e] border border-[#2d3748]"
-          }`}
+            }`}
         >
           Raw Markdown
         </button>
