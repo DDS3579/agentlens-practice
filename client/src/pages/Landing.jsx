@@ -1,3 +1,6 @@
+import { Button } from '@/components/ui/button'
+// Should resolve without error
+
 export default function Landing() {
   return (
     <div className="landing-container">
