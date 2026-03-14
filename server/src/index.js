@@ -3,35 +3,39 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+
+// Route imports
 import analyzeRoute from './routes/analyzeRoute.js';
 import githubRoute from './routes/githubRoute.js';
+import userRouter from './routes/userRoute.js';
+import historyRouter from './routes/historyRoute.js';
+
+// Service imports
 import { checkProviderHealth } from './llm/llmService.js';
 import { getActiveSessions } from './memory/sharedMemory.js';
-import userRouter from './routes/userRoute.js'
-
-
-
-// Supabase test
-// import { testSupabaseConnection } from './db/supabase.js'
-// console.log('[Debug] SUPABASE_URL exists?', !!process.env.SUPABASE_URL);
-// console.log('[Debug] SUPABASE_SERVICE_KEY exists?', !!process.env.SUPABASE_SERVICE_KEY);
-// const result = await testSupabaseConnection();
-// console.log('[Debug] Test result:', result);
+import { testSupabaseConnection } from './db/supabase.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// ===========================================
+// MIDDLEWARE CONFIGURATION
+// ===========================================
+
+// Enable CORS for frontend dev server
 app.use(cors({
   origin: 'http://localhost:5173'
 }));
 
+// Parse JSON bodies with increased limit for large repo payloads
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// User routes
-app.use('/api/user', userRouter)
+// ===========================================
+// HEALTH & STATUS ENDPOINTS
+// ===========================================
 
-// Health check endpoint
+// Basic health check - used by monitoring and load balancers
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -41,7 +45,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Status endpoint with provider health and memory info
+// Detailed status endpoint - shows provider health and memory usage
 app.get('/api/status', async (req, res) => {
   try {
     const healthResult = await checkProviderHealth();
@@ -58,20 +62,41 @@ app.get('/api/status', async (req, res) => {
   }
 });
 
-// Mount routes
+// ===========================================
+// API ROUTES
+// ===========================================
+
+// GitHub API proxy routes (fetch repos, files, etc.)
 app.use('/api/github', githubRoute);
+
+// Analysis pipeline routes (start analysis, stream results)
 app.use('/api/analyze', analyzeRoute);
 
-// Global error handler
+// User profile routes (get/update profile, requires Clerk auth)
+app.use('/api/user', userRouter);
+
+// Analysis history routes (list, view, delete saved analyses)
+app.use('/api/history', historyRouter);
+
+// ===========================================
+// ERROR HANDLING
+// ===========================================
+
+// Global error handler - catches unhandled errors from routes
 app.use((err, req, res, next) => {
   console.error('Server error:', err.message);
   res.status(500).json({
     error: err.message,
+    // Only include stack trace in development for debugging
     stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
   });
 });
 
-app.listen(PORT, () => {
+// ===========================================
+// SERVER STARTUP
+// ===========================================
+
+app.listen(PORT, async () => {
   console.log('\n🔍 AgentLens Server');
   console.log('==================');
   console.log('Port:', PORT);
@@ -79,6 +104,10 @@ app.listen(PORT, () => {
   console.log('Frontend:', 'http://localhost:5173');
   console.log('Health:', `http://localhost:${PORT}/health`);
   console.log('==================\n');
+
+  // Test database connection on startup
+  // Logs success/failure but doesn't block server start
+  await testSupabaseConnection();
 });
 
 
