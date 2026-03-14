@@ -7,6 +7,16 @@ import analyzeRoute from './routes/analyzeRoute.js';
 import githubRoute from './routes/githubRoute.js';
 import { checkProviderHealth } from './llm/llmService.js';
 import { getActiveSessions } from './memory/sharedMemory.js';
+import userRouter from './routes/userRoute.js'
+
+
+
+// Supabase test
+// import { testSupabaseConnection } from './db/supabase.js'
+// console.log('[Debug] SUPABASE_URL exists?', !!process.env.SUPABASE_URL);
+// console.log('[Debug] SUPABASE_SERVICE_KEY exists?', !!process.env.SUPABASE_SERVICE_KEY);
+// const result = await testSupabaseConnection();
+// console.log('[Debug] Test result:', result);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -17,6 +27,9 @@ app.use(cors({
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// User routes
+app.use('/api/user', userRouter)
 
 // Health check endpoint
 app.get('/health', (req, res) => {
