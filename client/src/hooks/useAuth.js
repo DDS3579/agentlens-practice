@@ -51,7 +51,7 @@ function useAuth() {
     }
 
     fetchUserProfile()
-  }, [isLoaded, isSignedIn, user?.id, getToken, setUserProfile, setLoadingProfile, setProfileError, clearProfile])
+  }, [isLoaded, isSignedIn, user?.id])
 
   return {
     // From Clerk

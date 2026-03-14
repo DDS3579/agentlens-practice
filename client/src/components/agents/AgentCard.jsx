@@ -1,85 +1,102 @@
 export default function AgentCard({ agentName, agent }) {
+  // Safety check - render nothing or placeholder if agent is undefined
+  if (!agent) {
+    return (
+      <div className="bg-[#1a1d2e] border border-[#2d3748] rounded-[10px] p-4">
+        <div className="flex items-center gap-2">
+          <span className="text-xl">🤖</span>
+          <span className="font-semibold text-gray-400">
+            {agentName || "Unknown Agent"}
+          </span>
+        </div>
+        <p className="text-sm text-gray-500 mt-2">Waiting for agent data...</p>
+      </div>
+    );
+  }
   const { status, currentAction, findings } = agent;
 
   const agentConfig = {
-    coordinator: { emoji: '🧠', displayName: 'Coordinator' },
-    security: { emoji: '🛡️', displayName: 'Security Specialist' },
-    writer: { emoji: '📝', displayName: 'Technical Writer' },
-    architecture: { emoji: '🏗️', displayName: 'Architecture Review' }
+    coordinator: { emoji: "🧠", displayName: "Coordinator" },
+    security: { emoji: "🛡️", displayName: "Security Specialist" },
+    writer: { emoji: "📝", displayName: "Technical Writer" },
+    architecture: { emoji: "🏗️", displayName: "Architecture Review" },
   };
 
-  const { emoji, displayName } = agentConfig[agentName] || { emoji: '🤖', displayName: agentName };
+  const { emoji, displayName } = agentConfig[agentName] || {
+    emoji: "🤖",
+    displayName: agentName,
+  };
 
   const getStatusBadge = () => {
     switch (status) {
-      case 'idle':
+      case "idle":
         return {
-          text: 'Idle',
-          classes: 'bg-gray-600 text-gray-200'
+          text: "Idle",
+          classes: "bg-gray-600 text-gray-200",
         };
-      case 'thinking':
+      case "thinking":
         return {
-          text: 'Thinking...',
-          classes: 'bg-yellow-600 text-yellow-100 animate-pulse'
+          text: "Thinking...",
+          classes: "bg-yellow-600 text-yellow-100 animate-pulse",
         };
-      case 'acting':
+      case "acting":
         return {
-          text: 'Acting',
-          classes: 'bg-blue-600 text-blue-100 animate-pulse'
+          text: "Acting",
+          classes: "bg-blue-600 text-blue-100 animate-pulse",
         };
-      case 'complete':
+      case "complete":
         return {
-          text: 'Complete ✓',
-          classes: 'bg-green-600 text-green-100'
+          text: "Complete ✓",
+          classes: "bg-green-600 text-green-100",
         };
-      case 'error':
+      case "error":
         return {
-          text: 'Error',
-          classes: 'bg-red-600 text-red-100'
+          text: "Error",
+          classes: "bg-red-600 text-red-100",
         };
       default:
         return {
           text: status,
-          classes: 'bg-gray-600 text-gray-200'
+          classes: "bg-gray-600 text-gray-200",
         };
     }
   };
 
   const getBorderColor = () => {
     switch (status) {
-      case 'idle':
-        return 'border-[#2d3748]';
-      case 'thinking':
-        return 'border-[#854d0e]';
-      case 'acting':
-        return 'border-[#1e40af]';
-      case 'complete':
-        return 'border-[#166534]';
-      case 'error':
-        return 'border-[#991b1b]';
+      case "idle":
+        return "border-[#2d3748]";
+      case "thinking":
+        return "border-[#854d0e]";
+      case "acting":
+        return "border-[#1e40af]";
+      case "complete":
+        return "border-[#166534]";
+      case "error":
+        return "border-[#991b1b]";
       default:
-        return 'border-[#2d3748]';
+        return "border-[#2d3748]";
     }
   };
 
   const getProgressBarColor = () => {
-    if (status === 'thinking') return 'bg-yellow-500';
-    if (status === 'acting') return 'bg-blue-500';
-    return 'bg-indigo-500';
+    if (status === "thinking") return "bg-yellow-500";
+    if (status === "acting") return "bg-blue-500";
+    return "bg-indigo-500";
   };
 
   const getStatsText = () => {
-    if (status !== 'acting' && status !== 'complete') return null;
+    if (status !== "acting" && status !== "complete") return null;
 
     switch (agentName) {
-      case 'security':
-        return `${findings} bug${findings !== 1 ? 's' : ''} found`;
-      case 'architecture':
-        return `${findings} suggestion${findings !== 1 ? 's' : ''}`;
-      case 'writer':
-        return status === 'complete' ? 'Docs generated' : 'Generating...';
-      case 'coordinator':
-        return status === 'complete' ? 'Plan ready' : 'Planning...';
+      case "security":
+        return `${findings} bug${findings !== 1 ? "s" : ""} found`;
+      case "architecture":
+        return `${findings} suggestion${findings !== 1 ? "s" : ""}`;
+      case "writer":
+        return status === "complete" ? "Docs generated" : "Generating...";
+      case "coordinator":
+        return status === "complete" ? "Plan ready" : "Planning...";
       default:
         return null;
     }
@@ -87,7 +104,7 @@ export default function AgentCard({ agentName, agent }) {
 
   const statusBadge = getStatusBadge();
   const statsText = getStatsText();
-  const showProgressBar = status === 'thinking' || status === 'acting';
+  const showProgressBar = status === "thinking" || status === "acting";
 
   return (
     <div
@@ -118,9 +135,7 @@ export default function AgentCard({ agentName, agent }) {
 
       {/* Stats Row */}
       {statsText && (
-        <div className="text-xs text-gray-400 mb-2">
-          {statsText}
-        </div>
+        <div className="text-xs text-gray-400 mb-2">{statsText}</div>
       )}
 
       {/* Progress Bar */}

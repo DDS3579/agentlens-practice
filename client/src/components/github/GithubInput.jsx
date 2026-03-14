@@ -2,7 +2,7 @@ import { useState } from 'react';
 import useAgentStore from '../../store/agentStore.js';
 import useAgentStream from '../../hooks/useAgentStream.js';
 
-export default function GithubInput() {
+export default function GithubInput({ onAnalysisStart }) {
   const { isAnalyzing, pipelinePhase, pipelineMessage, setRepoUrl } = useAgentStore();
   const { startAnalysis, cancelAnalysis } = useAgentStream();
 
@@ -45,7 +45,11 @@ export default function GithubInput() {
       .map((path) => path.trim())
       .filter((path) => path.length > 0);
 
-    startAnalysis(url, selectedPaths);
+    if (onAnalysisStart) {
+      onAnalysisStart(() => startAnalysis(url, selectedPaths));
+    } else {
+      startAnalysis(url, selectedPaths);
+    }
   };
 
   const handleExampleClick = (exampleUrl) => {
@@ -148,8 +152,8 @@ export default function GithubInput() {
         onClick={handleAnalyzeClick}
         disabled={pipelinePhase === 'fetching'}
         className={`w-full py-3.5 rounded-lg font-semibold transition-all flex items-center justify-center gap-2
-          ${isAnalyzing 
-            ? 'bg-red-600 hover:bg-red-700 text-white' 
+          ${isAnalyzing
+            ? 'bg-red-600 hover:bg-red-700 text-white'
             : 'bg-[#6366f1] hover:bg-[#5558e3] text-white'}
           ${pipelinePhase === 'fetching' ? 'opacity-70 cursor-not-allowed' : ''}
         `}

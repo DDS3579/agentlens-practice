@@ -1,27 +1,35 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useState } from "react";
 import useAuth from "../hooks/useAuth.js";
 import useAgentStore from "../store/agentStore.js";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  GitBranch,
-  Bug,
-  FileText,
-  Shield,
-  Cpu,
-  History,
-  Zap,
-  ArrowRight,
-  Play,
-} from "lucide-react";
+import GithubInput from "../components/github/GithubInput.jsx";
+import AgentCard from "../components/agents/AgentCard.jsx";
+import AgentFlowGraph from "../components/agents/AgentFlowGraph.jsx";
+import ActivityFeed from "../components/agents/ActivityFeed.jsx";
+import ResultsTabs from "../components/results/ResultsTabs.jsx";
 import UsageIndicator from "../components/billing/UsageIndicator.jsx";
 import UpgradeModal from "../components/billing/UpgradeModal.jsx";
-
-
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Zap,
+  Clock,
+  FileCode,
+  Bug,
+  Activity,
+  Shield,
+  FileText,
+  GitBranch,
+  Cpu,
+} from "lucide-react";
 
 function Dashboard() {
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeFeature, setUpgradeFeature] = useState({
+    name: "",
+    description: "",
+  });
+
   const {
     userProfile,
     isPro,
@@ -30,142 +38,184 @@ function Dashboard() {
     isLoadingProfile,
   } = useAuth();
 
-  const { isAnalyzing, pipelinePhase, repoInfo } = useAgentStore();
+  const {
+    agents,
+    isAnalyzing,
+    pipelinePhase,
+    compilationResult,
+    securitySummary,
+    writerResult,
+    architectureResult,
+    repoInfo,
+    activityLog,
+    resetPipeline,
+  } = useAgentStore();
 
   const analysesUsed = userProfile?.analyses_this_month || 0;
+  const hasResults = pipelinePhase === "complete";
 
-  const [showModal, setShowModal] = useState(true);
+  const currentDate = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  const handleAnalysisAttempt = (callback) => {
+    if (callback) callback();
+    return true;
+  };
+
+  const handleNewAnalysis = () => {
+    resetPipeline();
+  };
+
+  // Calculate stats from results
+  const stats = {
+    filesAnalyzed: repoInfo?.files?.length || 0,
+    bugsFound:
+      securitySummary?.totalIssues || compilationResult?.bugs?.length || 0,
+    duration: compilationResult?.duration || "0s",
+    healthScore:
+      compilationResult?.healthScore || architectureResult?.score || 0,
+  };
 
   return (
-    <div className="min-h-screen bg-gray-950 pt-20 pb-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Welcome Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white">
-            Welcome back
-            {userProfile?.name ? `, ${userProfile.name.split(" ")[0]}` : ""}
-          </h1>
-          <p className="text-gray-400 mt-1">
-            Analyze your GitHub repositories with AI-powered agents
-          </p>
+    <div className="min-h-screen bg-gray-950 pt-20 pb-8">
+      {/* Welcome Header */}
+      <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 mb-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-white">
+              Welcome back, {userProfile?.name?.split(" ")[0] || "Developer"} 👋
+            </h1>
+            <p className="text-gray-400 mt-1">
+              {currentDate} · Ready to analyze some code?
+            </p>
+          </div>
+          <div className="flex-shrink-0 w-full md:w-auto md:max-w-xs">
+            <UsageIndicator
+              used={analysesUsed}
+              limit={5}
+              plan={userProfile?.plan || "free"}
+            />
+          </div>
         </div>
+      </div>
 
-        <UpgradeModal
-          isOpen={showModal}
-          onClose={() => setShowModal(false)}
-          featureName="Auto-Fix Agent"
-          description="Automatically fix all detected bugs with one click."
-        />
+      {/* Stats Bar - Shows after analysis */}
+      {hasResults && (
+        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-gray-900 border border-white/10 rounded-xl p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                <FileCode className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <p className="text-gray-400 text-xs">Files Analyzed</p>
+                <p className="text-white font-semibold text-lg">
+                  {stats.filesAnalyzed}
+                </p>
+              </div>
+            </div>
+            <div className="bg-gray-900 border border-white/10 rounded-xl p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
+                <Bug className="w-5 h-5 text-red-400" />
+              </div>
+              <div>
+                <p className="text-gray-400 text-xs">Bugs Found</p>
+                <p className="text-white font-semibold text-lg">
+                  {stats.bugsFound}
+                </p>
+              </div>
+            </div>
+            <div className="bg-gray-900 border border-white/10 rounded-xl p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                <Clock className="w-5 h-5 text-purple-400" />
+              </div>
+              <div>
+                <p className="text-gray-400 text-xs">Duration</p>
+                <p className="text-white font-semibold text-lg">
+                  {stats.duration}
+                </p>
+              </div>
+            </div>
+            <div className="bg-gray-900 border border-white/10 rounded-xl p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                <Activity className="w-5 h-5 text-green-400" />
+              </div>
+              <div>
+                <p className="text-gray-400 text-xs">Health Score</p>
+                <p className="text-white font-semibold text-lg">
+                  {stats.healthScore}/100
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
-        {/* Main Grid */}
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Left Column - Analysis Input */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Repo Input Card */}
+      {/* Main Three Column Layout */}
+      <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Left Panel */}
+          <div className="w-full lg:w-80 flex-shrink-0 space-y-6 lg:overflow-y-auto lg:max-h-[calc(100vh-12rem)]">
+            {/* GitHub Input */}
             <Card className="bg-gray-900 border-white/10">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <GitBranch className="w-5 h-5 text-purple-400" />
-                  Analyze Repository
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {/* Placeholder - RepoInput removed */}
-                <div className="p-4 bg-gray-800/50 rounded-lg border border-dashed border-gray-700 text-center">
-                  <p className="text-gray-400 text-sm">
-                    Repository input temporarily disabled
-                  </p>
-                </div>
-
-                {!canRunAnalysis && !isPro && (
-                  <div className="mt-4 bg-red-950/50 border border-red-500/30 rounded-lg p-3 text-sm text-red-300">
-                    You've reached your monthly limit.
-                    <Link
-                      to="/billing"
-                      className="text-purple-400 hover:text-purple-300 ml-1"
-                    >
-                      Upgrade to Pro
-                    </Link>{" "}
-                    for unlimited analyses.
-                  </div>
-                )}
+              <CardContent className="p-4">
+                <GithubInput onAnalysisStart={handleAnalysisAttempt} />
               </CardContent>
             </Card>
 
-            {/* Empty State - When no analysis yet */}
-            {!isAnalyzing && (
-              <Card className="bg-gray-900 border-white/10 border-dashed">
-                <CardContent className="py-12">
-                  <div className="text-center">
-                    <div className="w-16 h-16 rounded-full bg-purple-500/10 flex items-center justify-center mx-auto mb-4">
-                      <Cpu className="w-8 h-8 text-purple-400" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-white mb-2">
-                      Ready to analyze
-                    </h3>
-                    <p className="text-gray-400 max-w-md mx-auto">
-                      Enter a GitHub repository URL above to get started. Our AI
-                      agents will analyze your code for bugs, security issues,
-                      and documentation.
-                    </p>
-
-                    {/* Agent Cards */}
-                    <div className="grid sm:grid-cols-3 gap-4 mt-8">
-                      <div className="bg-gray-800/50 rounded-lg p-4 text-left">
-                        <Shield className="w-6 h-6 text-red-400 mb-2" />
-                        <h4 className="text-white font-medium text-sm">
-                          Security Agent
-                        </h4>
-                        <p className="text-gray-500 text-xs mt-1">
-                          Finds vulnerabilities & risks
-                        </p>
-                      </div>
-                      <div className="bg-gray-800/50 rounded-lg p-4 text-left">
-                        <FileText className="w-6 h-6 text-blue-400 mb-2" />
-                        <h4 className="text-white font-medium text-sm">
-                          Writer Agent
-                        </h4>
-                        <p className="text-gray-500 text-xs mt-1">
-                          Generates documentation
-                        </p>
-                      </div>
-                      <div className="bg-gray-800/50 rounded-lg p-4 text-left">
-                        <Cpu className="w-6 h-6 text-green-400 mb-2" />
-                        <h4 className="text-white font-medium text-sm">
-                          Architecture Agent
-                        </h4>
-                        <p className="text-gray-500 text-xs mt-1">
-                          Reviews code structure
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            {/* New Analysis Button */}
+            {hasResults && (
+              <Button
+                onClick={handleNewAnalysis}
+                className="w-full bg-purple-600 hover:bg-purple-700"
+              >
+                <Zap className="w-4 h-4 mr-2" />
+                New Analysis
+              </Button>
             )}
-          </div>
 
-          {/* Right Column - Sidebar */}
-          <div className="space-y-6">
-            {/* Usage Indicator (Free users only) */}
-            {!isPro && (
-              <UsageIndicator
-                used={analysesUsed}
-                limit={5}
-                plan={userProfile?.plan || "free"}
+            {/* Agent Cards Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              <AgentCard
+                name="Coordinator"
+                icon={Cpu}
+                status={agents?.coordinator?.status || "idle"}
+                color="purple"
               />
-            )}
+              <AgentCard
+                name="Security"
+                icon={Shield}
+                status={agents?.security?.status || "idle"}
+                color="red"
+              />
+              <AgentCard
+                name="Writer"
+                icon={FileText}
+                status={agents?.writer?.status || "idle"}
+                color="blue"
+              />
+              <AgentCard
+                name="Architecture"
+                icon={GitBranch}
+                status={agents?.architecture?.status || "idle"}
+                color="green"
+              />
+            </div>
 
-            {/* Pro Badge (Pro users) */}
+            {/* Pro Badge for Pro Users */}
             {isPro && (
-              <Card className="bg-gradient-to-br from-purple-900/50 to-purple-950 border-purple-500/30">
-                <CardContent className="py-4">
+              <Card className="bg-gradient-to-br from-purple-900/50 to-gray-900 border-purple-500/30">
+                <CardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
                       <Zap className="w-5 h-5 text-purple-400" />
                     </div>
                     <div>
-                      <h3 className="text-white font-semibold">Pro Plan</h3>
+                      <p className="text-white font-medium">Pro Plan Active</p>
                       <p className="text-purple-300 text-sm">
                         Unlimited analyses
                       </p>
@@ -174,100 +224,101 @@ function Dashboard() {
                 </CardContent>
               </Card>
             )}
+          </div>
 
-            {/* Quick Stats */}
-            <Card className="bg-gray-900 border-white/10">
-              <CardHeader>
-                <CardTitle className="text-white text-base">
-                  This Month
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-400 text-sm">Analyses run</span>
-                  <span className="text-white font-medium">{analysesUsed}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-400 text-sm">Remaining</span>
-                  <span className="text-white font-medium">
-                    {isPro ? "∞" : analysesRemaining}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-400 text-sm">Plan</span>
-                  <Badge
-                    className={
-                      isPro
-                        ? "bg-purple-600 text-white"
-                        : "bg-gray-800 text-gray-300 border-gray-700"
-                    }
-                  >
-                    {isPro ? "Pro" : "Free"}
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Recent History */}
-            <Card className="bg-gray-900 border-white/10">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-white text-base">
-                  Recent Analyses
-                </CardTitle>
-                <Link to="/history">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-gray-400 hover:text-white"
-                  >
-                    View all
-                    <ArrowRight className="w-4 h-4 ml-1" />
-                  </Button>
-                </Link>
-              </CardHeader>
-              <CardContent>
-                {/* Placeholder for recent analyses */}
-                <div className="text-center py-6">
-                  <History className="w-8 h-8 text-gray-600 mx-auto mb-2" />
-                  <p className="text-gray-500 text-sm">No recent analyses</p>
-                  <p className="text-gray-600 text-xs mt-1">
-                    Your analysis history will appear here
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Upgrade CTA (Free users) */}
-            {!isPro && (
-              <Card className="bg-gradient-to-br from-purple-900/30 to-gray-900 border-purple-500/20">
-                <CardContent className="py-5">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
-                      <Zap className="w-5 h-5 text-purple-400" />
+          {/* Center Panel */}
+          <div className="flex-1 space-y-6 min-w-0">
+            {/* Agent Flow Graph or Empty State */}
+            {isAnalyzing || hasResults ? (
+              <Card className="bg-gray-900 border-white/10 overflow-hidden">
+                <CardContent className="p-0">
+                  <AgentFlowGraph />
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="bg-gray-900 border-white/10 border-dashed relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-transparent to-purple-500/10 animate-pulse" />
+                <CardContent className="py-20 relative">
+                  <div className="text-center">
+                    <div className="w-20 h-20 rounded-full bg-purple-500/10 flex items-center justify-center mx-auto mb-6">
+                      <GitBranch className="w-10 h-10 text-purple-400" />
                     </div>
-                    <div>
-                      <h3 className="text-white font-semibold">
-                        Upgrade to Pro
-                      </h3>
-                      <p className="text-gray-400 text-sm mt-1">
-                        Get unlimited analyses, Auto-Fix Agent, and GitHub PR
-                        creation.
-                      </p>
-                      <Button
-                        asChild
-                        size="sm"
-                        className="mt-3 bg-purple-600 hover:bg-purple-700"
+                    <h3 className="text-2xl font-semibold text-white mb-3">
+                      Ready to analyze
+                    </h3>
+                    <p className="text-gray-400 max-w-md mx-auto mb-6">
+                      Paste a GitHub repository URL in the input above to start
+                      analyzing with 4 specialized AI agents.
+                    </p>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      <Badge
+                        variant="outline"
+                        className="text-gray-400 border-gray-700"
                       >
-                        <Link to="/billing">View Plans</Link>
-                      </Button>
+                        <Shield className="w-3 h-3 mr-1" />
+                        Security Scan
+                      </Badge>
+                      <Badge
+                        variant="outline"
+                        className="text-gray-400 border-gray-700"
+                      >
+                        <FileText className="w-3 h-3 mr-1" />
+                        Documentation
+                      </Badge>
+                      <Badge
+                        variant="outline"
+                        className="text-gray-400 border-gray-700"
+                      >
+                        <Bug className="w-3 h-3 mr-1" />
+                        Bug Detection
+                      </Badge>
+                      <Badge
+                        variant="outline"
+                        className="text-gray-400 border-gray-700"
+                      >
+                        <Activity className="w-3 h-3 mr-1" />
+                        Architecture Review
+                      </Badge>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             )}
+
+            {/* Results Tabs */}
+            {hasResults && (
+              <div data-results>
+                <ResultsTabs />
+              </div>
+            )}
+          </div>
+
+          {/* Right Panel */}
+          <div className="w-full lg:w-80 flex-shrink-0">
+            <Card className="bg-gray-900 border-white/10 h-full lg:max-h-[calc(100vh-12rem)] overflow-hidden">
+              <CardContent className="p-0 h-full">
+                <div className="p-4 border-b border-white/10">
+                  <h3 className="text-white font-semibold flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-purple-400" />
+                    Activity Feed
+                  </h3>
+                </div>
+                <div className="overflow-y-auto h-[calc(100%-3.5rem)]">
+                  <ActivityFeed activities={activityLog} />
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        featureName={upgradeFeature.name}
+        description={upgradeFeature.description}
+      />
     </div>
   );
 }
