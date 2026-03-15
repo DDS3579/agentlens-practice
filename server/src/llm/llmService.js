@@ -420,3 +420,25 @@ export function resetProviderState() {
   state.totalCallCount = 0;
   console.log('🔄 Provider state reset to defaults');
 }
+
+/**
+ * Normalize usage data from any LLM provider response
+ * @param {Object} result - The result from callLLM
+ * @returns {{ promptTokens: number, completionTokens: number }}
+ */
+export function extractUsage(result) {
+  if (!result?.usage) return { promptTokens: 0, completionTokens: 0 };
+
+  return {
+    promptTokens:
+      result.usage.promptTokens ||
+      result.usage.prompt_tokens ||
+      result.usage.input_tokens ||
+      0,
+    completionTokens:
+      result.usage.completionTokens ||
+      result.usage.completion_tokens ||
+      result.usage.output_tokens ||
+      0,
+  };
+}

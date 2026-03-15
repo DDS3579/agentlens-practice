@@ -30,9 +30,17 @@ import { useCallback } from "react";
 import useAuthStore from "../../store/authStore";
 import useAgentStore from "../../store/agentStore";
 import useFixStore from "../../store/fixStore";
+
+// ── Step 7: Custom Agent Panel ──
 import CustomAgentPanel from "../agents/CustomAgentPanel";
 
-// Navigation items configuration - updated paths to match your routes
+// ── Step 9: New Pro sidebar panels ──
+import AgentStatusPanel from "../agents/AgentStatusPanel";
+import FixQueuePanel from "../agents/FixQueuePanel";
+import TokenUsageMeter from "../billing/TokenUsageMeter";
+import GitHubPRButton from "../github/GitHubPRButton";
+
+// Navigation items configuration
 const navigationItems = [
   {
     title: "Dashboard",
@@ -86,8 +94,6 @@ function UsageIndicator() {
   const isCollapsed = state === "collapsed";
 
   // TODO: Connect to your actual billing store
-  // import { useBillingStore } from '@/stores/billingStore'
-  // const { usedAnalyses, maxAnalyses } = useBillingStore()
   const usedAnalyses = 3;
   const maxAnalyses = 5;
   const remainingAnalyses = maxAnalyses - usedAnalyses;
@@ -100,7 +106,6 @@ function UsageIndicator() {
           className="relative flex h-8 w-8 items-center justify-center rounded-full"
           title={`${remainingAnalyses} analyses remaining`}
         >
-          {/* Background circle */}
           <svg className="h-8 w-8 -rotate-90 transform">
             <circle
               cx="16"
@@ -144,7 +149,10 @@ function UsageIndicator() {
             {remainingAnalyses} left
           </span>
         </div>
-        <Progress value={usagePercentage} className="h-1.5 bg-sidebar-accent" />
+        <Progress
+          value={usagePercentage}
+          className="h-1.5 bg-sidebar-accent"
+        />
         <p className="mt-2 text-[10px] text-sidebar-foreground/50">
           {usedAnalyses} of {maxAnalyses} analyses used this month
         </p>
@@ -188,7 +196,6 @@ function NavigationMenu() {
                 }
               `}
             >
-              {/* Active indicator bar */}
               {active && (
                 <div className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-violet-500" />
               )}
@@ -199,7 +206,9 @@ function NavigationMenu() {
                 }`}
               />
 
-              {!isCollapsed && <span className="truncate">{item.title}</span>}
+              {!isCollapsed && (
+                <span className="truncate">{item.title}</span>
+              )}
             </SidebarMenuButton>
           </SidebarMenuItem>
         );
@@ -224,13 +233,10 @@ export default function AppSidebar() {
   // Handle custom prompt submission
   const handleCustomPromptSubmit = useCallback(
     async (promptText) => {
-      // Store the prompt
       setCustomPrompt(promptText);
 
-      // If there's an active session, trigger the custom agent immediately
       if (sessionId && !isAnalyzing) {
         try {
-          // Get auth token
           const getToken = window.__agentlens_getToken;
           if (!getToken) {
             console.warn("[AppSidebar] No getToken function available");
@@ -239,7 +245,6 @@ export default function AppSidebar() {
 
           const token = await getToken();
 
-          // POST to custom agent endpoint
           const response = await fetch("/api/fix/custom", {
             method: "POST",
             headers: {
@@ -255,32 +260,39 @@ export default function AppSidebar() {
           if (!response.ok) {
             console.error(
               "[AppSidebar] Custom agent request failed:",
-              response.status,
+              response.status
             );
           }
         } catch (error) {
-          console.error("[AppSidebar] Error triggering custom agent:", error);
+          console.error(
+            "[AppSidebar] Error triggering custom agent:",
+            error
+          );
         }
       } else {
-        // No active session - prompt will be used in next analysis
         console.log(
-          "[AppSidebar] Custom prompt stored, will run with next analysis",
+          "[AppSidebar] Custom prompt stored, will run with next analysis"
         );
       }
     },
-    [sessionId, isAnalyzing, setCustomPrompt],
+    [sessionId, isAnalyzing, setCustomPrompt]
   );
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
-      {/* Header with Logo */}
+      {/* ================================================
+          HEADER — Logo
+          ================================================ */}
       <SidebarHeader className="border-b border-sidebar-border/50 px-2 py-4">
         <AgentLensLogo />
       </SidebarHeader>
 
-      {/* Main Navigation Content */}
-      <SidebarContent className="px-2 py-4">
-        <SidebarGroup>
+      {/* ================================================
+          MAIN CONTENT
+          ================================================ */}
+      <SidebarContent className="flex flex-col px-0 py-0">
+        {/* Navigation Group */}
+        <SidebarGroup className="px-2 py-4">
           <SidebarGroupLabel className="px-2 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/40">
             Navigation
           </SidebarGroupLabel>
@@ -289,35 +301,64 @@ export default function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* ============================================
-            CUSTOM AGENT PANEL - ADD THIS SECTION
-            Only show for Pro users, but render with isPro prop
-            so free users see the teaser/disabled state
-            ============================================ */}
-        <SidebarGroup className="mt-4">
-          <SidebarGroupLabel className="px-2 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/40">
-            Pro Tools
-          </SidebarGroupLabel>
-          <SidebarGroupContent className="px-1">
-            <CustomAgentPanel
-              onSubmitPrompt={handleCustomPromptSubmit}
-              isPro={isPro}
-            />
-          </SidebarGroupContent>
-        </SidebarGroup>
-        {/* ============================================
-            END CUSTOM AGENT PANEL
-            ============================================ */}
-      </SidebarContent>
-
-      {/* Footer with Usage & Profile */}
-      <SidebarFooter className="mt-auto">
-        {/* Usage Indicator */}
-        <UsageIndicator />
-
         <Separator className="bg-sidebar-border/50" />
 
-        {/* User Profile Dropdown */}
+        {/* ================================================
+            PRO TOOLS — Scrollable section
+            All Pro-only panels in a scrollable container
+            so they don't push the footer off-screen
+            ================================================ */}
+        {isPro ? (
+          <div
+            className="overflow-y-auto flex-1 space-y-2 px-2 py-2"
+            style={{ maxHeight: "calc(100vh - 180px)" }}
+          >
+            {/* ── Step 7: Custom Agent Panel ── */}
+            <SidebarGroup className="p-0">
+              <SidebarGroupLabel className="px-2 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/40">
+                Pro Tools
+              </SidebarGroupLabel>
+              <SidebarGroupContent className="px-0">
+                <CustomAgentPanel
+                  onSubmitPrompt={handleCustomPromptSubmit}
+                  isPro={isPro}
+                />
+              </SidebarGroupContent>
+            </SidebarGroup>
+
+            <Separator className="bg-sidebar-border/30" />
+
+            {/* ── Step 9: Agent Status Panel ── */}
+            <AgentStatusPanel />
+
+            <Separator className="bg-sidebar-border/30" />
+
+            {/* ── Step 9: Fix Queue Panel ── */}
+            <FixQueuePanel />
+
+            <Separator className="bg-sidebar-border/30" />
+
+            {/* ── Step 9: Token Usage Meter ── */}
+            <TokenUsageMeter />
+
+            <Separator className="bg-sidebar-border/30" />
+
+            {/* ── Step 9: GitHub PR Button ── */}
+            <GitHubPRButton />
+          </div>
+        ) : (
+          /* ================================================
+             FREE TIER — Usage Indicator
+             ================================================ */
+          <UsageIndicator />
+        )}
+      </SidebarContent>
+
+      {/* ================================================
+          FOOTER — User Profile
+          ================================================ */}
+      <SidebarFooter className="mt-auto">
+        <Separator className="bg-sidebar-border/50" />
         <div className="p-2">
           <UserProfileDropdown />
         </div>

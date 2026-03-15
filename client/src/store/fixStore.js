@@ -367,6 +367,45 @@ const useFixStore = create((set, get) => ({
       failedBugIds: new Set(),
     });
   },
+
+  // ============================================================
+// fixStore.js — ADDITIONS (add to existing store)
+// ============================================================
+
+// Add these to your fixStore's state and actions:
+
+  // ── Add to initial state: ──
+  fixAgentEdits: [],
+
+  // ── Add these actions: ──
+
+  /**
+   * Add an edit from the fix agent
+   * @param {Object} edit - { file, newContent, explanation, type, startLine, endLine }
+   */
+  addFixEdit: (edit) => {
+    set((state) => ({
+      fixAgentEdits: [...state.fixAgentEdits, edit],
+    }));
+  },
+
+  /**
+   * Clear all fix agent edits
+   */
+  clearFixEdits: () => {
+    set({ fixAgentEdits: [] });
+  },
+
+  /**
+   * Clear all custom agent edits (if not already present)
+   */
+  // clearCustomEdits should already exist from Step 7
+  // If not, add:
+  clearCustomEdits: () => {
+    set({ customAgentEdits: [] });
+  },
 }));
+
+
 
 export default useFixStore;

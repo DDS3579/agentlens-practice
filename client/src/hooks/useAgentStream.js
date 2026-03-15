@@ -40,6 +40,7 @@ export function useAgentStream(sessionId) {
       'fix_complete',
       'fix_failed',
       'fix_stream',
+      'token_usage', // New: for LLM token usage tracking
     ];
 
     eventTypes.forEach((eventType) => {
