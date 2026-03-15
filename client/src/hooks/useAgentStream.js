@@ -1,121 +1,86 @@
-import { useRef, useCallback } from 'react';
-import useAgentStore from '../store/agentStore.js';
+// client/src/hooks/useAgentStream.js
+// This is the key update to handle concurrent agent updates
 
-export default function useAgentStream() {
+import { useEffect, useRef } from 'react';
+import useAgentStore from '../store/agentStore';
+
+export function useAgentStream(sessionId) {
   const handleSSEEvent = useAgentStore((state) => state.handleSSEEvent);
-  const startAnalysisStore = useAgentStore((state) => state.startAnalysis);
-  const setError = useAgentStore((state) => state.setError);
-  const reset = useAgentStore((state) => state.reset);
+  const eventSourceRef = useRef(null);
 
-  const abortControllerRef = useRef(null);
+  useEffect(() => {
+    if (!sessionId) return;
 
-  const startAnalysis = useCallback(async (url, selectedPaths) => {
-    // Reset store and mark as analyzing
-    startAnalysisStore();
+    const url = `/api/analysis/stream?sessionId=${encodeURIComponent(sessionId)}`;
+    console.log('[useAgentStream] Connecting to:', url);
 
-    abortControllerRef.current = new AbortController();
+    const eventSource = new EventSource(url);
+    eventSourceRef.current = eventSource;
 
-    try {
-      console.log('[useAgentStream] Starting analysis for:', url);
+    // Handle all event types
+    const eventTypes = [
+      'connected',
+      'pipeline_start',
+      'repo_ready',
+      'session_created',
+      'agent_status',
+      'agent_update',      // New: for parallel agent updates
+      'phase_complete',    // New: for phase completion events
+      'coordinator_plan',
+      'agent_finding',
+      'agent_communication',
+      'session_status',
+      'analysis_complete',
+      'pipeline_complete', // New: for full pipeline completion
+      'final_results',
+      'session_error',
+      'error',
+      'memory_update',
+      'fix_start',
+      'fix_complete',
+      'fix_failed',
+      'fix_stream',
+    ];
 
-      const response = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, selectedPaths: selectedPaths || [] }),
-        signal: abortControllerRef.current.signal
+    eventTypes.forEach((eventType) => {
+      eventSource.addEventListener(eventType, (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log(`[useAgentStream] ${eventType}:`, data);
+          
+          // Pass to store handler - it now supports concurrent agent updates
+          handleSSEEvent(eventType, data);
+        } catch (err) {
+          console.error(`[useAgentStream] Error parsing ${eventType}:`, err);
+        }
       });
+    });
 
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => response.statusText);
-        throw new Error(`Failed to start analysis: ${errorText}`);
+    // Generic message handler for any unlisted events
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log('[useAgentStream] Generic message:', data);
+        handleSSEEvent('message', data);
+      } catch (err) {
+        // Ignore non-JSON messages (keepalive, etc.)
       }
+    };
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
+    eventSource.onerror = (error) => {
+      console.error('[useAgentStream] Connection error:', error);
+      handleSSEEvent('error', { error: 'Connection lost' });
+    };
 
-      while (true) {
-        const { done, value } = await reader.read();
-
-        if (done) {
-          // Process any remaining data in the buffer
-          if (buffer.trim()) {
-            processSSEBuffer(buffer, handleSSEEvent);
-          }
-          console.log('[useAgentStream] Stream ended');
-          break;
-        }
-
-        buffer += decoder.decode(value, { stream: true });
-
-        // SSE messages are separated by double newlines
-        const messages = buffer.split('\n\n');
-        // Keep the last chunk (may be incomplete)
-        buffer = messages.pop();
-
-        for (const message of messages) {
-          processSSEBuffer(message, handleSSEEvent);
-        }
+    return () => {
+      console.log('[useAgentStream] Disconnecting');
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
       }
-    } catch (error) {
-      if (error.name === 'AbortError') {
-        console.log('[useAgentStream] Analysis cancelled by user');
-        return;
-      }
-      console.error('[useAgentStream] Error:', error);
-      setError(error.message);
-    }
-  }, [startAnalysisStore, handleSSEEvent, setError]);
+    };
+  }, [sessionId, handleSSEEvent]);
 
-  const cancelAnalysis = useCallback(() => {
-    console.log('[useAgentStream] Cancelling analysis');
-    abortControllerRef.current?.abort();
-    reset();
-  }, [reset]);
-
-  return { startAnalysis, cancelAnalysis };
+  return eventSourceRef;
 }
 
-/**
- * Process a single SSE message block (everything between \n\n delimiters)
- * Handles multi-line data: fields by concatenating them
- */
-function processSSEBuffer(message, handleSSEEvent) {
-  const trimmed = message.trim();
-  if (!trimmed || trimmed.startsWith(':')) {
-    // Comment or empty — skip (keepalive pings, etc.)
-    return;
-  }
-
-  const lines = trimmed.split('\n');
-  let eventName = null;
-  const dataLines = [];
-
-  for (const line of lines) {
-    if (line.startsWith('event:')) {
-      eventName = line.slice(6).trim();
-    } else if (line.startsWith('data:')) {
-      dataLines.push(line.slice(5).trim());
-    }
-    // Ignore other fields (id:, retry:, etc.)
-  }
-
-  // Join all data: lines into one string (SSE spec says they should be joined with newlines)
-  const dataStr = dataLines.join('\n');
-
-  if (!dataStr) {
-    return;
-  }
-
-  // If no event name was specified, default to 'message' (SSE spec default)
-  const resolvedEvent = eventName || 'message';
-
-  try {
-    const data = JSON.parse(dataStr);
-    console.log('[useAgentStream] Event:', resolvedEvent, data);
-    handleSSEEvent(resolvedEvent, data);
-  } catch (e) {
-    // Not valid JSON — might be a plain text message
-    console.warn('[useAgentStream] Failed to parse SSE data for event:', resolvedEvent, dataStr.substring(0, 100));
-  }
-}
+export default useAgentStream;

@@ -222,3 +222,120 @@ export {
   sendDiffEvent,      // NEW
   sendEditCompleteEvent, // NEW
 };
+
+
+// server/src/streaming/sseEmitter.js
+// Add these two new functions to the existing file
+
+/**
+ * Sends an agent status update event
+ * Wrapper around sendSSEEvent with type 'agent_update'
+ * 
+ * @param {Object} res - Express response object
+ * @param {Object} data - Agent status data
+ * @param {string} data.agent - Agent name
+ * @param {string} data.status - Status: 'running' | 'complete' | 'error'
+ * @param {number} [data.startedAt] - Timestamp when agent started
+ * @param {number} [data.duration] - Duration in ms
+ * @param {string} [data.error] - Error message if status is 'error'
+ * @param {any} [data.result] - Result object (will be truncated)
+ * @param {string} [data.message] - Optional status message
+ */
+export function sendAgentStatusEvent(res, {
+  agent,
+  status,
+  startedAt,
+  duration,
+  error,
+  result,
+  message,
+}) {
+  // Truncate result to avoid SSE payload bloat
+  // Only send a summary, not the full result object
+  let resultSummary = null;
+  if (result !== undefined && result !== null) {
+    if (typeof result === 'string') {
+      resultSummary = result.substring(0, 200);
+    } else if (typeof result === 'object') {
+      // Try to extract a summary
+      const summary = result.summary || result.message || result.planSummary;
+      if (typeof summary === 'string') {
+        resultSummary = summary.substring(0, 200);
+      } else {
+        // Fallback: stringify and truncate
+        try {
+          const str = JSON.stringify(result);
+          resultSummary = str.length > 200 ? str.substring(0, 200) + '...' : str;
+        } catch {
+          resultSummary = '[Object]';
+        }
+      }
+    }
+  }
+
+  const payload = {
+    agent,
+    agentName: agent, // Alias for compatibility
+    status,
+    timestamp: Date.now(),
+  };
+
+  if (startedAt !== undefined) payload.startedAt = startedAt;
+  if (duration !== undefined) payload.duration = duration;
+  if (error !== undefined) payload.error = error;
+  if (resultSummary !== null) payload.resultSummary = resultSummary;
+  if (message !== undefined) payload.message = message;
+
+  // Map status to currentAction for frontend compatibility
+  if (status === 'running') {
+    payload.currentAction = message || 'Processing...';
+  } else if (status === 'complete') {
+    payload.currentAction = message || 'Complete';
+  } else if (status === 'error') {
+    payload.currentAction = error || 'Failed';
+  }
+
+  sendSSEEvent(res, 'agent_update', payload);
+}
+
+/**
+ * Sends a phase completion event
+ * Wrapper around sendSSEEvent with type 'phase_complete'
+ * 
+ * @param {Object} res - Express response object
+ * @param {Object} data - Phase completion data
+ * @param {string} data.phase - Phase name: 'coordinator' | 'analysis' | 'fix' | 'complete'
+ * @param {string} [data.status] - Status: 'started' | 'completed'
+ * @param {Array<string>} [data.agentsCompleted] - List of completed agent names
+ * @param {Array<string>} [data.agentsFailed] - List of failed agent names
+ * @param {number} [data.duration] - Phase duration in ms
+ * @param {string} [data.message] - Optional message
+ */
+export function sendPhaseEvent(res, {
+  phase,
+  status,
+  agentsCompleted,
+  agentsFailed,
+  duration,
+  message,
+}) {
+  const payload = {
+    phase,
+    timestamp: Date.now(),
+  };
+
+  if (status !== undefined) payload.status = status;
+  if (agentsCompleted !== undefined) payload.agentsCompleted = agentsCompleted;
+  if (agentsFailed !== undefined) payload.agentsFailed = agentsFailed;
+  if (duration !== undefined) payload.duration = duration;
+  if (message !== undefined) payload.message = message;
+
+  // Calculate summary stats
+  if (agentsCompleted && agentsFailed) {
+    payload.totalAgents = agentsCompleted.length + agentsFailed.length;
+    payload.successCount = agentsCompleted.length;
+    payload.failureCount = agentsFailed.length;
+  }
+
+  sendSSEEvent(res, 'phase_complete', payload);
+}
