@@ -21,7 +21,7 @@ export function isAnthropicAvailable() {
  * @param {boolean} [options.jsonMode] - Enable JSON response mode
  * @returns {Promise<{ content: string, usage: { promptTokens: number, completionTokens: number } }>}
  */
-export async function callAnthropic(prompt, systemPrompt, options = {}) {
+export async function callAnthropic(messages, options = {}) {
   if (!isAnthropicAvailable()) {
     throw new Error('ANTHROPIC_AUTH_ERROR');
   }
@@ -30,22 +30,18 @@ export async function callAnthropic(prompt, systemPrompt, options = {}) {
     apiKey: process.env.ANTHROPIC_API_KEY
   });
 
-  return executeAnthropicCall(client, prompt, systemPrompt, options);
+  return executeAnthropicCall(client, messages, options);
 }
 
 /**
  * Call Anthropic with user's own API key instead of platform key
  * @param {string} apiKey - User's Anthropic API key
- * @param {string} prompt - The user prompt
- * @param {string} systemPrompt - The system prompt
- * @param {Object} options - Options object
- * @param {string} [options.model] - Model to use (default: 'claude-haiku-4-5-20251001')
- * @param {number} [options.temperature] - Temperature (default: 0.3)
- * @param {number} [options.maxTokens] - Max tokens (default: 4000)
- * @param {boolean} [options.jsonMode] - Enable JSON response mode
+ * @param {Array|string} messages - Chat messages array OR user prompt string
+ * @param {Object|string} options - Options object OR system prompt string
+ * @param {Object} [optionsOverride] - Options if using old style
  * @returns {Promise<{ content: string, usage: { promptTokens: number, completionTokens: number } }>}
  */
-export async function callAnthropicWithKey(apiKey, prompt, systemPrompt, options = {}) {
+export async function callAnthropicWithKey(apiKey, messages, options = {}) {
   if (!apiKey || apiKey.trim() === '') {
     throw new Error('ANTHROPIC_AUTH_ERROR');
   }
@@ -54,36 +50,54 @@ export async function callAnthropicWithKey(apiKey, prompt, systemPrompt, options
     apiKey: apiKey
   });
 
-  return executeAnthropicCall(client, prompt, systemPrompt, options);
+  return executeAnthropicCall(client, messages, options);
 }
 
 /**
  * Execute the actual Anthropic API call
  * @param {Anthropic} client - Anthropic client instance
- * @param {string} prompt - The user prompt
- * @param {string} systemPrompt - The system prompt
- * @param {Object} options - Options object
+ * @param {Array|string} promptOrMessages - The user prompt or messages array
+ * @param {string|Object} systemPromptOrOptions - The system prompt or options
+ * @param {Object} [additionalOptions] - Additional options if using old style
  * @returns {Promise<{ content: string, usage: { promptTokens: number, completionTokens: number } }>}
  */
-async function executeAnthropicCall(client, prompt, systemPrompt, options = {}) {
+async function executeAnthropicCall(client, promptOrMessages, systemPromptOrOptions, additionalOptions = {}) {
+  let messages;
+  let options;
+  let systemPrompt = '';
+
+  if (Array.isArray(promptOrMessages)) {
+    // New style
+    options = systemPromptOrOptions || {};
+    
+    // Anthropic expects system prompt separately, not in messages
+    const systemMsg = promptOrMessages.find(m => m.role === 'system');
+    systemPrompt = systemMsg ? systemMsg.content : '';
+    
+    // Filter out system message from messages array
+    messages = promptOrMessages.filter(m => m.role !== 'system');
+  } else {
+    // Legacy support for (prompt, systemPrompt, options)
+    options = additionalOptions || {};
+    systemPrompt = systemPromptOrOptions || 'You are a helpful assistant.';
+    messages = [
+      { role: 'user', content: promptOrMessages }
+    ];
+  }
+
   const model = options.model || 'claude-haiku-4-5-20251001';
   const temperature = options.temperature ?? 0.3;
   const maxTokens = options.maxTokens || 4000;
 
-  let finalSystemPrompt = systemPrompt;
   if (options.jsonMode) {
-    finalSystemPrompt = systemPrompt + '\n\nRespond with valid JSON only. No markdown, no explanation.';
+    systemPrompt += '\n\nRespond with valid JSON only. No markdown, no explanation.';
   }
-
-  const messages = [
-    { role: 'user', content: prompt }
-  ];
 
   const requestOptions = {
     model: model,
     max_tokens: maxTokens,
     temperature: temperature,
-    system: finalSystemPrompt,
+    system: systemPrompt,
     messages: messages
   };
 

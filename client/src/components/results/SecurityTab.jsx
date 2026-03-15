@@ -113,8 +113,8 @@ const SecurityTab = () => {
         <button
           onClick={() => setActiveFilter('all')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeFilter === 'all'
-              ? 'bg-indigo-600 text-white'
-              : 'bg-[#1a1d2e] text-gray-300 hover:bg-[#252a3e] border border-[#2d3748]'
+            ? 'bg-indigo-600 text-white'
+            : 'bg-[#1a1d2e] text-gray-300 hover:bg-[#252a3e] border border-[#2d3748]'
             }`}
         >
           All ({bugs.length})
@@ -122,8 +122,8 @@ const SecurityTab = () => {
         <button
           onClick={() => setActiveFilter('critical')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeFilter === 'critical'
-              ? 'bg-indigo-600 text-white'
-              : 'bg-[#1a1d2e] text-gray-300 hover:bg-[#252a3e] border border-[#2d3748]'
+            ? 'bg-indigo-600 text-white'
+            : 'bg-[#1a1d2e] text-gray-300 hover:bg-[#252a3e] border border-[#2d3748]'
             }`}
         >
           Critical ({severityCounts.critical})
@@ -131,8 +131,8 @@ const SecurityTab = () => {
         <button
           onClick={() => setActiveFilter('high')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeFilter === 'high'
-              ? 'bg-indigo-600 text-white'
-              : 'bg-[#1a1d2e] text-gray-300 hover:bg-[#252a3e] border border-[#2d3748]'
+            ? 'bg-indigo-600 text-white'
+            : 'bg-[#1a1d2e] text-gray-300 hover:bg-[#252a3e] border border-[#2d3748]'
             }`}
         >
           High ({severityCounts.high})
@@ -140,8 +140,8 @@ const SecurityTab = () => {
         <button
           onClick={() => setActiveFilter('medium')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeFilter === 'medium'
-              ? 'bg-indigo-600 text-white'
-              : 'bg-[#1a1d2e] text-gray-300 hover:bg-[#252a3e] border border-[#2d3748]'
+            ? 'bg-indigo-600 text-white'
+            : 'bg-[#1a1d2e] text-gray-300 hover:bg-[#252a3e] border border-[#2d3748]'
             }`}
         >
           Medium ({severityCounts.medium})
@@ -149,8 +149,8 @@ const SecurityTab = () => {
         <button
           onClick={() => setActiveFilter('low')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeFilter === 'low'
-              ? 'bg-indigo-600 text-white'
-              : 'bg-[#1a1d2e] text-gray-300 hover:bg-[#252a3e] border border-[#2d3748]'
+            ? 'bg-indigo-600 text-white'
+            : 'bg-[#1a1d2e] text-gray-300 hover:bg-[#252a3e] border border-[#2d3748]'
             }`}
         >
           Low ({severityCounts.low})
@@ -164,17 +164,36 @@ const SecurityTab = () => {
             <span>⚡</span> Top Priority Actions
           </h3>
           <div className="grid gap-3 md:grid-cols-2">
-            {topPriorityActions.map((action, index) => (
-              <div
-                key={index}
-                className="bg-gradient-to-r from-red-900/30 to-orange-900/30 border border-red-500/30 rounded-lg p-4"
-              >
-                <div className="text-white font-medium">{action.title || action}</div>
-                {action.description && (
-                  <div className="text-gray-400 text-sm mt-1">{action.description}</div>
-                )}
-              </div>
-            ))}
+            {topPriorityActions.map((action, index) => {
+              // Handle both shapes: string or {rank, action, reason, agent}
+              const title = typeof action === 'string' ? action : (action.action || action.title || 'Action required');
+              const description = typeof action === 'string' ? null : (action.reason || action.description || null);
+              const agentLabel = typeof action === 'object' ? action.agent : null;
+
+              return (
+                <div
+                  key={index}
+                  className="bg-gradient-to-r from-red-900/30 to-orange-900/30 border border-red-500/30 rounded-lg p-4"
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    {typeof action === 'object' && action.rank && (
+                      <span className="bg-red-500/30 text-red-300 text-xs font-bold px-1.5 py-0.5 rounded">
+                        #{action.rank}
+                      </span>
+                    )}
+                    {agentLabel && (
+                      <span className="bg-[#252a3e] text-gray-300 px-2 py-0.5 rounded text-xs font-medium capitalize">
+                        {agentLabel}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-white font-medium">{title}</div>
+                  {description && (
+                    <div className="text-gray-400 text-sm mt-1">{description}</div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

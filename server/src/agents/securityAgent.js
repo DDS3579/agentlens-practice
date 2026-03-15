@@ -1,4 +1,4 @@
-import { callLLM } from '../llm/llmService.js';
+import { callLLM, callLLMWithUserConfig } from '../llm/llmService.js';
 import {
   SECURITY_SYSTEM_PROMPT,
   buildFileAnalysisPrompt,
@@ -16,6 +16,7 @@ export async function runSecurityAnalysis(memory) {
     const files = memory.get('files');
     const plan = memory.get('plan');
     const allBugs = [];
+    const userLLMConfig = memory.get('userLLMConfig');
 
     console.log(`🛡️  Security Agent starting — analyzing ${files.length} files`);
 
@@ -65,11 +66,11 @@ export async function runSecurityAnalysis(memory) {
       ];
 
       try {
-        const response = await callLLM(messages, {
+        const response = await callLLMWithUserConfig(messages, {
           agentRole: 'security',
           jsonMode: true,
           temperature: 0.1
-        });
+        }, userLLMConfig);
 
         // Parse result
         let result;
@@ -148,11 +149,11 @@ export async function runSecurityAnalysis(memory) {
           { role: 'user', content: buildSummaryPrompt(allBugs, sortedFiles.length) }
         ];
 
-        const summaryResponse = await callLLM(summaryMessages, {
+        const summaryResponse = await callLLMWithUserConfig(summaryMessages, {
           agentRole: 'security',
           jsonMode: true,
           temperature: 0.1
-        });
+        }, userLLMConfig);
 
         let parsedSummary;
         if (typeof summaryResponse.content === 'object') {

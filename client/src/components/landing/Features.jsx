@@ -1,3 +1,4 @@
+// src/components/landing/Features.jsx
 
 import { motion } from 'framer-motion'
 import { useInView } from 'react-intersection-observer'
@@ -120,7 +121,7 @@ function Features() {
             >
               <div className="text-3xl sm:text-4xl font-bold text-white">
                 {statsInView ? (
-                  <CountUp end={stat.value} duration={2} />
+                  <CountUp to={stat.value} duration={2} />  
                 ) : (
                   0
                 )}

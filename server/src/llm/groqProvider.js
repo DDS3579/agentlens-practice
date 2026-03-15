@@ -23,6 +23,40 @@ export function createGroqClient() {
 }
 
 export async function callGroq(messages, options = {}) {
+  const apiKey = process.env.GROQ_API_KEY;
+
+  if (!apiKey) {
+    throw new Error(
+      'GROQ_API_KEY is not set. Please set the GROQ_API_KEY environment variable.'
+    );
+  }
+
+  const client = new Groq({ apiKey });
+  return executeGroqCall(client, messages, options);
+}
+
+/**
+ * Call Groq with user's own API key
+ * @param {string} apiKey - User's Groq API key
+ * @param {Array} messages - Chat messages
+ * @param {Object} options - Options object
+ */
+export async function callGroqWithKey(apiKey, messages, options = {}) {
+  if (!apiKey || apiKey.trim() === '') {
+    throw new Error('GROQ_AUTH_ERROR: API key is required');
+  }
+
+  const client = new Groq({ apiKey });
+  return executeGroqCall(client, messages, options);
+}
+
+/**
+ * Internal function to execute Groq API call
+ * @param {Groq} client - Groq client instance
+ * @param {Array} messages - Chat messages
+ * @param {Object} options - Options object
+ */
+async function executeGroqCall(client, messages, options = {}) {
   const {
     model: modelOverride,
     temperature = 0.3,
@@ -39,8 +73,6 @@ export async function callGroq(messages, options = {}) {
   } else {
     model = MODEL_MAP.default;
   }
-
-  const client = createGroqClient();
 
   const requestParams = {
     model,

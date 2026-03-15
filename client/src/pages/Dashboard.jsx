@@ -173,12 +173,14 @@ function Dashboard() {
 
   // Calculate stats from results
   const stats = {
-    filesAnalyzed: repoInfo?.files?.length || 0,
+    filesAnalyzed: repoInfo?.files?.length || repoInfo?.totalFiles || repoInfo?.analyzedFiles || 0,
     bugsFound:
-      securitySummary?.totalIssues || compilationResult?.bugs?.length || 0,
-    duration: compilationResult?.duration || "0s",
+      securitySummary?.totalIssues || securitySummary?.bugs?.length || compilationResult?.bugs?.length || 0,
+    duration: compilationResult?.duration || (compilationResult?.timing?.total
+      ? `${Math.round(compilationResult.timing.total / 1000)}s`
+      : '0s'),
     healthScore:
-      compilationResult?.healthScore || architectureResult?.score || 0,
+      compilationResult?.codeHealthScore || architectureResult?.architectureScore || 0,
   };
 
   return (

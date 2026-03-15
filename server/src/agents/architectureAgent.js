@@ -1,4 +1,4 @@
-import { callLLM } from '../llm/llmService.js';
+import { callLLM, callLLMWithUserConfig } from '../llm/llmService.js';
 import {
   ARCHITECTURE_SYSTEM_PROMPT,
   buildArchitecturePrompt,
@@ -19,6 +19,7 @@ export async function runArchitectureReview(memory) {
     const bugs = memory.get('bugs') || [];
     const documentation = memory.get('documentation');
     const repoSummary = memory.get('repoSummary');
+    const userLLMConfig = memory.get('userLLMConfig');
 
     console.log(`🏗️  Architecture Agent starting`);
     console.log(`   Files to review: ${files.length}`);
@@ -59,11 +60,11 @@ export async function runArchitectureReview(memory) {
         { role: 'user', content: buildPatternAnalysisPrompt(filesForAnalysis) }
       ];
 
-      const patternResponse = await callLLM(patternMessages, {
+      const patternResponse = await callLLMWithUserConfig(patternMessages, {
         agentRole: 'architecture',
         jsonMode: true,
         temperature: 0.2
-      });
+      }, userLLMConfig);
 
       patternResult = typeof patternResponse.content === 'object'
         ? patternResponse.content
@@ -93,12 +94,12 @@ export async function runArchitectureReview(memory) {
     console.log('🏗️  Calling LLM for architecture review...');
 
     try {
-      const response = await callLLM(messages, {
+      const response = await callLLMWithUserConfig(messages, {
         agentRole: 'architecture',
         jsonMode: true,
         temperature: 0.3,
         maxTokens: 4096
-      });
+      }, userLLMConfig);
 
       let result;
       if (typeof response.content === 'object') {

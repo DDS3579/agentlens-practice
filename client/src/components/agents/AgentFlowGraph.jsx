@@ -10,6 +10,7 @@ const getStatusColor = (status) => {
     case 'thinking':
       return { bg: 'bg-yellow-600', text: 'text-yellow-100', border: '#854d0e' };
     case 'acting':
+    case 'running':
       return { bg: 'bg-blue-600', text: 'text-blue-100', border: '#1e40af' };
     case 'complete':
       return { bg: 'bg-green-600', text: 'text-green-100', border: '#166534' };
@@ -52,26 +53,26 @@ function AgentNode({ data }) {
       }}
     >
       <Handle type="target" position={Position.Top} className="!bg-[#6366f1]" />
-      
+
       <div className="text-2xl mb-1">{emoji}</div>
       <div className="text-white text-sm font-medium mb-2">{label}</div>
-      
-      <div className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-medium ${statusColors.bg} ${statusColors.text} ${status === 'thinking' || status === 'acting' ? 'animate-pulse' : ''}`}>
-        {status === 'thinking' ? 'Thinking...' : status === 'acting' ? 'Acting' : status === 'complete' ? 'Complete ✓' : status === 'error' ? 'Error' : 'Idle'}
+
+      <div className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-medium ${statusColors.bg} ${statusColors.text} ${status === 'thinking' || status === 'acting' || status === 'running' ? 'animate-pulse' : ''}`}>
+        {status === 'thinking' ? 'Thinking...' : status === 'acting' || status === 'running' ? 'Running...' : status === 'complete' ? 'Complete ✓' : status === 'error' ? 'Error' : 'Idle'}
       </div>
-      
+
       {currentAction && (
         <div className="text-[10px] text-gray-400 mt-2 truncate max-w-[130px]" title={currentAction}>
           {currentAction}
         </div>
       )}
-      
+
       {findings > 0 && (
         <div className="text-[10px] text-indigo-400 mt-1">
           {findings} finding{findings !== 1 ? 's' : ''}
         </div>
       )}
-      
+
       <Handle type="source" position={Position.Bottom} className="!bg-[#6366f1]" />
     </div>
   );
@@ -107,8 +108,8 @@ export default function AgentFlowGraph() {
         label: agentConfig[agentName]?.label || agentName,
         emoji: agentConfig[agentName]?.emoji || '🤖',
         status: agent.status,
-        currentAction: agent.currentAction,
-        findings: agent.findings
+        currentAction: agent.currentAction || agent.message || '',
+        findings: agent.findings || 0
       }
     }));
 
@@ -118,7 +119,7 @@ export default function AgentFlowGraph() {
       position: staticPositions.report,
       data: {
         isReport: true,
-        healthScore: compilationResult?.healthScore
+        healthScore: compilationResult?.codeHealthScore
       }
     };
 
@@ -128,7 +129,7 @@ export default function AgentFlowGraph() {
   const edges = useMemo(() => {
     const getEdgeStyle = (sourceAgentId) => {
       const agent = agents[sourceAgentId];
-      const isActive = agent?.status === 'acting' || agent?.status === 'complete';
+      const isActive = agent?.status === 'acting' || agent?.status === 'running' || agent?.status === 'complete';
       return {
         stroke: isActive ? '#6366f1' : '#4a5568',
         strokeWidth: isActive ? 2.5 : 1.5
@@ -137,7 +138,7 @@ export default function AgentFlowGraph() {
 
     const isEdgeAnimated = (sourceAgentId) => {
       const agent = agents[sourceAgentId];
-      return agent?.status === 'acting' || agent?.status === 'complete';
+      return agent?.status === 'acting' || agent?.status === 'running' || agent?.status === 'complete';
     };
 
     return [

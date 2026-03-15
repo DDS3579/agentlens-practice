@@ -9,7 +9,7 @@ import { runArchitectureReview } from '../agents/architectureAgent.js';
  * Main analysis pipeline
  * Runs all agents in sequence and returns final results
  */
-export async function runAnalysisPipeline(files, repoSummary, onSession) {
+export async function runAnalysisPipeline(files, repoSummary, onSession, userLLMConfig = null) {
   // STEP 1 — Create session
   const sessionId = uuidv4();
   const memory = createSession(sessionId);
@@ -24,6 +24,7 @@ export async function runAnalysisPipeline(files, repoSummary, onSession) {
   // STEP 2 — Store initial data in memory
   memory.set('files', files);
   memory.set('repoSummary', repoSummary);
+  memory.set('userLLMConfig', userLLMConfig);
   memory.setStatus('analyzing');
 
   // STEP 3 — Call onSession callback

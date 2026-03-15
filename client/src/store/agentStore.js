@@ -515,7 +515,8 @@ const useAgentStore = create((set, get) => ({
           const isRunning = data.status === 'acting' || data.status === 'thinking' || data.status === 'analyzing'
           updateAgent(agentName, {
             status: isRunning ? 'running' : data.status,
-            message: data.currentAction || data.status
+            message: data.currentAction || data.status,
+            currentAction: data.currentAction || ''
           })
           if (isRunning) {
             setPipelinePhase('analyzing', `${agentName} agent: ${data.currentAction || 'working...'}`)
@@ -624,39 +625,52 @@ const useAgentStore = create((set, get) => ({
       // ── Backend: sseEmitter sends "analysis_complete" with memory.getSnapshot() ──
       // data shape: full snapshot { bugs, documentation, refactors, plan, agentStatuses, ... }
       case 'analysis_complete': {
-        const snapshot = data
-        const updates = {}
+        const snapshot = data;
+        const updates = {};
 
-        if (snapshot.bugs && snapshot.bugs.length > 0) {
+        if (snapshot.bugs) {
+          const bugs = snapshot.bugs || [];
+          const summary = snapshot.securitySummary || {};
           updates.securitySummary = {
-            ...get().securitySummary,
-            bugs: snapshot.bugs,
-            totalIssues: snapshot.bugs.length
-          }
-          updateAgent('security', { status: 'complete' })
-        }
-        if (snapshot.documentation) {
-          updates.writerResult = snapshot.documentation
-          updateAgent('writer', { status: 'complete' })
-        }
-        if (snapshot.refactors && snapshot.refactors.length > 0) {
-          updates.architectureResult = {
-            ...get().architectureResult,
-            refactors: snapshot.refactors
-          }
-          updateAgent('architecture', { status: 'complete' })
-        }
-        if (snapshot.plan) {
-          updates.plan = snapshot.plan
+            ...summary,
+            bugs,
+            totalIssues: bugs.length || summary.totalIssues || 0
+          };
+          updateAgent('security', { status: 'complete' });
         }
 
-        set(updates)
+        if (snapshot.documentation) {
+          updates.writerResult = snapshot.documentation;
+          updateAgent('writer', { status: 'complete' });
+        }
+
+        if (snapshot.refactors || snapshot.architectureResult) {
+          const archResult = snapshot.architectureResult || {};
+          const refactors = snapshot.refactors || [];
+          const patterns = snapshot.patternAnalysis || null;
+          updates.architectureResult = {
+            ...archResult,
+            refactors,
+            patternAnalysis: patterns || archResult.patternAnalysis || null
+          };
+          updateAgent('architecture', { status: 'complete' });
+        }
+
+        if (snapshot.plan) {
+          updates.plan = snapshot.plan;
+        }
+
+        if (snapshot.compilationResult) {
+          updates.compilationResult = snapshot.compilationResult;
+        }
+
+        set(updates);
         addActivity({
           type: 'system',
           agent: 'system',
           message: 'Analysis snapshot received'
-        })
-        break
+        });
+        break;
       }
 
       // ── Backend: analyzeRoute sends "final_results" as last event before res.end() ──
@@ -667,7 +681,14 @@ const useAgentStore = create((set, get) => ({
 
         // Extract results from whatever shape the pipeline returns
         if (results.security) {
-          finalUpdates.securitySummary = results.security.summary || results.security
+          // Merge summary AND bugs into securitySummary so the frontend can read both
+          const summary = results.security.summary || {}
+          const bugs = results.security.bugs || []
+          finalUpdates.securitySummary = {
+            ...summary,
+            bugs,
+            totalIssues: bugs.length || summary.totalIssues || 0
+          }
           updateAgent('security', { status: 'complete', result: results.security })
         }
         if (results.documentation || results.writer) {
@@ -675,7 +696,15 @@ const useAgentStore = create((set, get) => ({
           updateAgent('writer', { status: 'complete', result: results.documentation || results.writer })
         }
         if (results.architecture) {
-          finalUpdates.architectureResult = results.architecture.result || results.architecture
+          // Merge result, refactors, and patterns into architectureResult
+          const archResult = results.architecture.result || {}
+          const refactors = results.architecture.refactors || []
+          const patterns = results.architecture.patterns || null
+          finalUpdates.architectureResult = {
+            ...archResult,
+            refactors,
+            patternAnalysis: patterns || archResult.patternAnalysis || null
+          }
           updateAgent('architecture', { status: 'complete', result: results.architecture })
         }
         if (results.compilation || results.summary) {
@@ -685,12 +714,16 @@ const useAgentStore = create((set, get) => ({
         // Also handle flat snapshot shape (from getSnapshot)
         if (results.bugs && !results.security) {
           finalUpdates.securitySummary = {
+            ...(get().securitySummary || {}),
             bugs: results.bugs,
             totalIssues: results.bugs.length
           }
         }
         if (results.refactors && !results.architecture) {
-          finalUpdates.architectureResult = { refactors: results.refactors }
+          finalUpdates.architectureResult = {
+            ...(get().architectureResult || {}),
+            refactors: results.refactors
+          }
         }
 
         set(finalUpdates)
@@ -705,7 +738,7 @@ const useAgentStore = create((set, get) => ({
 
         // Auto-save
         setTimeout(() => saveAnalysisToBackend(), 100)
-        break
+        break;
       }
 
       // ── Backend: sseEmitter sends "session_error" ──

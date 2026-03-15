@@ -1,4 +1,4 @@
-import { callLLM } from '../llm/llmService.js';
+import { callLLM, callLLMWithUserConfig } from '../llm/llmService.js';
 import {
   WRITER_SYSTEM_PROMPT,
   buildDocumentationPrompt,
@@ -55,13 +55,15 @@ export async function runTechnicalWriter(memory) {
 
     console.log('📝 Calling LLM for documentation generation...');
 
+    const userLLMConfig = memory.get('userLLMConfig');
+
     try {
-      const response = await callLLM(messages, {
+      const response = await callLLMWithUserConfig(messages, {
         agentRole: 'writer',
         jsonMode: true,
         temperature: 0.4,
         maxTokens: 4096
-      });
+      }, userLLMConfig);
 
       // Parse result
       let result;

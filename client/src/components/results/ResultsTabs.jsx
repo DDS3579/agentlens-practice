@@ -37,7 +37,7 @@ const ResultsTabs = () => {
     },
   ];
 
-  const duration = finalResults?.duration || finalResults?.timing?.total;
+  const duration = finalResults?.duration || finalResults?.timing?.durationMs || finalResults?.timing?.total;
 
   const handleReset = () => {
     if (confirm('Start a new analysis? This will clear all current results.')) {
@@ -93,8 +93,8 @@ const ResultsTabs = () => {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`relative px-4 py-3 text-sm font-medium transition-colors flex items-center gap-2 ${activeTab === tab.id
-                  ? 'text-white'
-                  : 'text-gray-400 hover:text-gray-200'
+                ? 'text-white'
+                : 'text-gray-400 hover:text-gray-200'
                 }`}
             >
               <span>{tab.icon}</span>

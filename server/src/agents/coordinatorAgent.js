@@ -1,4 +1,4 @@
-import { callLLM } from '../llm/llmService.js';
+import { callLLM, callLLMWithUserConfig } from '../llm/llmService.js';
 import {
   COORDINATOR_SYSTEM_PROMPT,
   buildPlanningPrompt,
@@ -43,13 +43,14 @@ export async function runPlanningPhase(memory) {
       { role: 'user', content: userMessage }
     ];
 
+    const userLLMConfig = memory.get('userLLMConfig');
     let response;
     try {
-      response = await callLLM(messages, {
+      response = await callLLMWithUserConfig(messages, {
         agentRole: 'coordinator',
         jsonMode: true,
         temperature: 0.2
-      });
+      }, userLLMConfig);
       console.log('🤖 LLM response received for planning');
     } catch (llmError) {
       console.error('❌ LLM call failed during planning:', llmError.message);
@@ -128,13 +129,14 @@ export async function runCompilationPhase(memory) {
       { role: 'user', content: userMessage }
     ];
 
+    const userLLMConfig = memory.get('userLLMConfig');
     let response;
     try {
-      response = await callLLM(messages, {
+      response = await callLLMWithUserConfig(messages, {
         agentRole: 'coordinator',
         jsonMode: true,
         temperature: 0.2
-      });
+      }, userLLMConfig);
       console.log('🤖 LLM response received for compilation');
     } catch (llmError) {
       console.error('❌ LLM call failed during compilation:', llmError.message);

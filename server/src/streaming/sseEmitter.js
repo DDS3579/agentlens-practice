@@ -3,6 +3,11 @@
  * @param {Object} res - Express response object
  */
 export function setupSSEHeaders(res) {
+  // If headers are already sent, don't try to set them again
+  if (res.headersSent) {
+    return;
+  }
+
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');

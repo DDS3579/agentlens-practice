@@ -48,7 +48,7 @@ export default function CountUp({
 
   const formattedCount = count.toFixed(decimals);
 
-  return (
+  return (  
     <span ref={ref} className={className}>
       {prefix}{formattedCount}{suffix}
     </span>
