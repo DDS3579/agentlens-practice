@@ -469,7 +469,7 @@ const Hero = () => {
 
           {/* CTA Section */}
           <motion.div
-            className="w-full max-w-xl mx-auto lg:mx-0 mt-8"
+            className="w-full max-w-xl mx-auto lg:mx-0 mt-12 lg:mt-16"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.6 }}

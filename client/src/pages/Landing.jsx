@@ -24,6 +24,13 @@ function Landing() {
               </span>
             </Link>
 
+            {/* Center - Navigation Links */}
+            <div className="hidden md:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
+              <a href="#features" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Features</a>
+              <a href="#how-it-works" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">How it Works</a>
+              <a href="#pricing" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Pricing</a>
+            </div>
+
             {/* Right Side - Auth Buttons */}
             <div className="flex items-center gap-3">
               <Button
@@ -49,14 +56,35 @@ function Landing() {
       {/* Hero Section */}
       <Hero />
 
+      {/* Decorative Divider */}
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-12">
+        <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      </div>
+
       {/* Features Section */}
-      <Features />
+      <div id="features" className="pt-8 pb-12 scroll-mt-24">
+        <Features />
+      </div>
+
+      {/* Decorative Divider */}
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      </div>
 
       {/* How It Works Section */}
-      <HowItWorks />
+      <div id="how-it-works" className="pt-8 pb-12 scroll-mt-24">
+        <HowItWorks />
+      </div>
+
+      {/* Decorative Divider */}
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      </div>
 
       {/* Pricing Section */}
-      <Pricing />
+      <div id="pricing" className="pt-8 pb-24 scroll-mt-24">
+        <Pricing />
+      </div>
 
       {/* Footer */}
       <footer className="bg-gray-900 border-t border-white/10 py-12 px-4">
@@ -167,7 +195,7 @@ function Landing() {
           {/* Bottom Bar */}
           <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-gray-500 text-sm">
-              © 2025 AgentLens. Built for developers, by developers.
+              © 2026 AgentLens. Built for developers, by developers.
             </p>
             <div className="flex items-center gap-4">
               <a href="#" className="text-gray-500 hover:text-white text-sm transition-colors">
