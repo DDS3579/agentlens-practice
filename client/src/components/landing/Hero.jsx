@@ -204,7 +204,7 @@ const WordReveal = ({ words, className, delayStart = 0 }) => (
     {words.map((word, i) => (
       <motion.span
         key={i}
-        className="inline-block mr-[0.3em]"
+        className={`inline-block ${i < words.length - 1 ? 'mr-[0.3em]' : ''}`}
         initial={{ opacity: 0, y: 20, filter: 'blur(8px)' }}
         animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
         transition={{
@@ -389,15 +389,15 @@ const RotatingSubheadline = () => {
   }, []);
 
   return (
-    <div className="h-8 relative flex items-center justify-center">
+    <div className="h-12 relative flex items-center justify-center lg:justify-start overflow-hidden w-full">
       <AnimatePresence mode="wait">
         <motion.p
           key={index}
-          className="text-gray-400 text-base sm:text-lg absolute"
-          initial={{ opacity: 0, y: 15, filter: 'blur(4px)' }}
-          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-          exit={{ opacity: 0, y: -15, filter: 'blur(4px)' }}
-          transition={{ duration: 0.5 }}
+          className="text-gray-400 text-lg sm:text-xl font-light tracking-wide absolute whitespace-nowrap"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
         >
           {SUBHEADLINES[index]}
         </motion.p>
@@ -411,21 +411,6 @@ const Hero = () => {
   const { isSignedIn } = useAuth();
   const navigate = useNavigate();
   const [repoUrl, setRepoUrl] = useState('');
-  const [showLayer2, setShowLayer2] = useState(false);
-  const [showLayer3, setShowLayer3] = useState(false);
-  const [animationComplete, setAnimationComplete] = useState(false);
-
-  useEffect(() => {
-    const timer2 = setTimeout(() => setShowLayer2(true), 2000);
-    const timer3 = setTimeout(() => setShowLayer3(true), 3800);
-    // Mark animation as complete and hide all animation layers
-    const timerComplete = setTimeout(() => setAnimationComplete(true), 5200);
-    return () => {
-      clearTimeout(timer2);
-      clearTimeout(timer3);
-      clearTimeout(timerComplete);
-    };
-  }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -460,321 +445,117 @@ const Hero = () => {
         ))}
       </div>
 
-      {/* Animation Phase - Only show if animation is not complete */}
-      {!animationComplete && (
-        <div className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20 flex flex-col items-center min-h-screen flex flex-col items-center justify-center">
-          {/* LAYER 1: Dramatic Opening */}
-          <AnimatePresence>
-            {!animationComplete && (
-              <motion.div
-                className="text-center mb-6"
-                animate={showLayer3 ? { opacity: 0.3, scale: 0.85, y: -30 } : {}}
-                exit={{ opacity: 0, scale: 0.95, filter: 'blur(8px)' }}
-                transition={{ duration: 1, ease: 'easeInOut' }}
-              >
-                <h1 className="font-display text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-tight leading-tight">
-                  <WordReveal
-                    words={['ARE', 'YOU', 'TIRED', 'OF']}
-                    delayStart={0.2}
-                  />
-                  <br />
-                  <WordReveal
-                    words={['BUGS', 'EATING', 'UP']}
-                    delayStart={0.8}
-                  />
-                  <br />
-                  <WordReveal
-                    words={['YOUR', 'CODE?']}
-                    delayStart={1.3}
-                  />
-                </h1>
-              </motion.div>
-            )}
-          </AnimatePresence>
+      {/* Main Hero Section */}
+      <div className="relative z-10 w-full mx-auto px-4 sm:px-6 lg:px-8 py-20 flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-12">
+        {/* Left Column - Text Content */}
+        <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start">
+          {/* Product Tagline */}
+          <motion.div
+            className="text-center lg:text-left"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
+          >
 
-          {/* LAYER 2: Relief */}
-          <AnimatePresence>
-            {showLayer2 && !animationComplete && (
-              <motion.div
-                className="text-center mb-10 relative"
-                initial={{ opacity: 0, y: 20 }}
-                animate={showLayer3 ? { opacity: 0.3, scale: 0.9, y: -20 } : { opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, filter: 'blur(8px)' }}
-                transition={{ duration: 0.8, ease: 'easeOut' }}
-              >
-                {/* Glow behind text */}
-                <motion.div
-                  className="absolute inset-0 -z-10 blur-[60px] bg-purple-500/20 rounded-full mx-auto"
-                  style={{ width: '60%', height: '120%', left: '20%', top: '-10%' }}
-                  animate={{ opacity: [0.15, 0.3, 0.15] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                />
-                <h2
-                  className="font-display text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight"
-                  style={{
-                    background: 'linear-gradient(135deg, #c084fc, #a78bfa)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                  }}
-                >
-                  WE HAVE GOT YOU COVERED.
-                </h2>
-              </motion.div>
-            )}
-          </AnimatePresence>
+            
+            <h1 className="font-display text-5xl sm:text-6xl lg:text-[4.5rem] xl:text-[5rem] font-extrabold text-white tracking-tight leading-[1.1] mb-6 max-w-2xl text-shadow-sm">
+              4 AI Agents. <br className="hidden sm:block" />
+              One Codebase.{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-purple-300 to-white drop-shadow-sm">
+                Zero Bugs.
+              </span>
+            </h1>
 
-          {/* LAYER 3 during animation - small version */}
-          <AnimatePresence>
-            {showLayer3 && !animationComplete && (
-              <motion.div
-                className="w-full flex flex-col items-center gap-8"
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
-              >
-                {/* Product Tagline */}
-                <motion.div
-                  className="text-center"
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1, duration: 0.6 }}
-                >
-                  <div className="flex items-center justify-center gap-2 mb-6">
-                    <Badge className="bg-purple-500/10 text-purple-400 border border-purple-500/20 hover:bg-purple-500/20 px-4 py-2 text-base">
-                      <Zap className="w-4 h-4 mr-2" />
-                      AI-Powered
-                    </Badge>
-                  </div>
-                  <h2 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-tight mb-6">
-                    AgentLens — 4 AI Agents. One Codebase.{' '}
-                    <span
-                      style={{
-                        background: 'linear-gradient(135deg, #c084fc, #a78bfa)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                      }}
+            {/* Rotating Subheadline */}
+            <div className="max-w-xl mx-auto lg:mx-0 mb-2">
+              <RotatingSubheadline />
+            </div>
+          </motion.div>
+
+          {/* CTA Section */}
+          <motion.div
+            className="w-full max-w-xl mx-auto lg:mx-0 mt-8"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.6 }}
+          >
+            {isSignedIn ? (
+              <div className="flex justify-center lg:justify-start">
+                <Link to="/dashboard">
+                  <motion.div
+                    className="relative group"
+                    whileHover={{ scale: 1.03, y: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                  >
+                    <div className="absolute -inset-1 bg-gradient-to-r from-purple-500 to-violet-500 rounded-xl blur opacity-30 group-hover:opacity-60 transition duration-500" />
+                    <Button
+                      size="lg"
+                      className="relative bg-purple-600 hover:bg-purple-500 text-white px-8 py-6 text-lg rounded-xl shadow-lg shadow-purple-500/25 border border-white/10 transition-colors z-10"
                     >
-                      Zero Bugs.
-                    </span>
-                  </h2>
-
-                  {/* Rotating Subheadline */}
-                  <div className="text-xl sm:text-2xl text-gray-300">
-                    <RotatingSubheadline />
-                  </div>
-                </motion.div>
-
-                {/* CTA Section */}
-                <motion.div
-                  className="w-full max-w-xl mx-auto"
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3, duration: 0.6 }}
-                >
-                  {isSignedIn ? (
-                    <div className="flex justify-center">
-                      <Link to="/dashboard">
-                        <motion.div
-                          whileHover={{ scale: 1.03, y: -2 }}
-                          whileTap={{ scale: 0.98 }}
-                          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                        >
-                          <Button
-                            size="lg"
-                            className="bg-purple-600 hover:bg-purple-500 text-white px-8 py-6 text-lg rounded-xl shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-shadow"
-                          >
-                            Go to Dashboard
-                            <ArrowRight className="w-5 h-5 ml-2" />
-                          </Button>
-                        </motion.div>
-                      </Link>
-                    </div>
-                  ) : (
-                    <>
-                      <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
-                        <div className="relative flex-1">
-                          <Github className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                          <input
-                            type="url"
-                            value={repoUrl}
-                            onChange={(e) => setRepoUrl(e.target.value)}
-                            placeholder="Paste your GitHub repo URL..."
-                            className="w-full bg-gray-900 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all text-sm sm:text-base"
-                          />
-                        </div>
-                        <motion.div
-                          whileHover={{ scale: 1.03, y: -1 }}
-                          whileTap={{ scale: 0.98 }}
-                          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                        >
-                          <Button
-                            type="submit"
-                            size="lg"
-                            className="w-full sm:w-auto bg-purple-600 hover:bg-purple-500 text-white px-6 py-3.5 rounded-xl shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-shadow whitespace-nowrap"
-                          >
-                            Analyze My Repo
-                            <ArrowRight className="w-4 h-4 ml-2" />
-                          </Button>
-                        </motion.div>
-                      </form>
-
-                      {/* Micro-copy */}
-                      <motion.p
-                        className="text-center text-gray-500 text-xs sm:text-sm mt-4"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.5 }}
-                      >
-                        No credit card required · 5 free analyses/month · Setup in 30 seconds
-                      </motion.p>
-                    </>
-                  )}
-                </motion.div>
-
-                {/* Hero Terminal Card */}
-                <motion.div
-                  className="w-full mt-4"
-                  initial={{ opacity: 0, y: 40 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6, duration: 0.8 }}
-                >
-                  <HeroTerminal />
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      )}
-
-      {/* Main Hero Section - Show after animation is complete */}
-      {animationComplete && (
-        <div className="relative z-10 w-full mx-auto px-4 sm:px-6 lg:px-8 py-20 flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-12">
-          {/* Left Column - Text Content */}
-          <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start">
-            {/* Product Tagline */}
-            <motion.div
-              className="text-center lg:text-left"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: 'easeOut' }}
-            >
-              <div className="flex items-center justify-center lg:justify-start gap-2 mb-6">
-                <Badge className="bg-purple-500/10 text-purple-400 border border-purple-500/20 hover:bg-purple-500/20 px-4 py-2 text-base">
-                  <Zap className="w-4 h-4 mr-2" />
-                  AI-Powered
-                </Badge>
+                      Go to Dashboard
+                      <ArrowRight className="w-5 h-5 ml-2" />
+                    </Button>
+                  </motion.div>
+                </Link>
               </div>
-              <h2 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-tight mb-6">
-                AgentLens — 4 AI Agents. One Codebase.{' '}
-                <span
-                  style={{
-                    background: 'linear-gradient(135deg, #c084fc, #a78bfa)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                  }}
-                >
-                  Zero Bugs.
-                </span>
-              </h2>
-
-              {/* Rotating Subheadline */}
-              <div className="text-xl sm:text-2xl text-gray-300">
-                <RotatingSubheadline />
-              </div>
-            </motion.div>
-
-            {/* CTA Section */}
-            <motion.div
-              className="w-full max-w-xl mx-auto lg:mx-0 mt-8"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.6 }}
-            >
-              {isSignedIn ? (
-                <div className="flex justify-center lg:justify-start">
-                  <Link to="/dashboard">
-                    <motion.div
-                      whileHover={{ scale: 1.03, y: -2 }}
-                      whileTap={{ scale: 0.98 }}
-                      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                    >
-                      <Button
-                        size="lg"
-                        className="bg-purple-600 hover:bg-purple-500 text-white px-8 py-6 text-lg rounded-xl shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-shadow"
-                      >
-                        Go to Dashboard
-                        <ArrowRight className="w-5 h-5 ml-2" />
-                      </Button>
-                    </motion.div>
-                  </Link>
-                </div>
-              ) : (
-                <>
-                  <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
-                    <div className="relative flex-1">
-                      <Github className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+            ) : (
+              <>
+                <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4">
+                  <div className="relative flex-1 group">
+                    <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 to-violet-500 rounded-xl blur opacity-0 group-hover:opacity-30 transition duration-500" />
+                    <div className="relative flex items-center">
+                      <Github className="absolute left-4 w-5 h-5 text-gray-500" />
                       <input
                         type="url"
                         value={repoUrl}
                         onChange={(e) => setRepoUrl(e.target.value)}
                         placeholder="Paste your GitHub repo URL..."
-                        className="w-full bg-gray-900 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all text-sm sm:text-base"
+                        className="w-full bg-gray-900/50 backdrop-blur-md border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all text-base relative z-10 shadow-inner"
                       />
                     </div>
-                    <motion.div
-                      whileHover={{ scale: 1.03, y: -1 }}
-                      whileTap={{ scale: 0.98 }}
-                      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                    >
-                      <Button
-                        type="submit"
-                        size="lg"
-                        className="w-full sm:w-auto bg-purple-600 hover:bg-purple-500 text-white px-6 py-3.5 rounded-xl shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-shadow whitespace-nowrap"
-                      >
-                        Analyze My Repo
-                        <ArrowRight className="w-4 h-4 ml-2" />
-                      </Button>
-                    </motion.div>
-                  </form>
-
-                  {/* Micro-copy */}
-                  <motion.p
-                    className="text-center lg:text-left text-gray-500 text-xs sm:text-sm mt-4"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.4 }}
+                  </div>
+                  <motion.div
+                    whileHover={{ scale: 1.02, y: -1 }}
+                    whileTap={{ scale: 0.98 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                    className="flex-shrink-0"
                   >
-                    No credit card required · 5 free analyses/month · Setup in 30 seconds
-                  </motion.p>
-                </>
-              )}
-            </motion.div>
+                    <Button
+                      type="submit"
+                      size="lg"
+                      className="w-full sm:w-auto bg-purple-600 hover:bg-purple-500 text-white px-8 py-4 h-[58px] rounded-xl shadow-[0_0_20px_rgba(168,85,247,0.3)] hover:shadow-[0_0_30px_rgba(168,85,247,0.5)] transition-shadow whitespace-nowrap font-medium text-base border border-purple-500/30"
+                    >
+                      Analyze My Repo
+                      <ArrowRight className="w-5 h-5 ml-2" />
+                    </Button>
+                  </motion.div>
+                </form>
 
-            {/* Hero Terminal Card */}
-            <motion.div
-              className="w-full mt-8"
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7, duration: 0.8 }}
-            >
-              <HeroTerminal />
-            </motion.div>
-          </div>
-
-          {/* Right Column - 3D Cube Display */}
-          <motion.div
-            className="w-full lg:w-1/2 h-96 lg:h-screen lg:sticky lg:top-0"
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.8 }}
-          >
-            <Cube width="100%" height="100%" />
+                {/* Micro-copy */}
+                <motion.p
+                  className="text-center lg:text-left text-gray-500 text-sm font-medium mt-5"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  No credit card required · 5 free analyses/month · Setup in 30 seconds
+                </motion.p>
+              </>
+            )}
           </motion.div>
         </div>
-      )}
+
+        {/* Right Column - 3D Cube Display */}
+        <motion.div
+          className="w-full lg:w-1/2 h-96 lg:h-[calc(100vh-5rem)] lg:max-h-[700px] lg:sticky lg:top-20"
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.8 }}
+        >
+          <Cube width="100%" height="100%" />
+        </motion.div>
+      </div>
 
       {/* Bottom fade gradient */}
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-gray-950 to-transparent pointer-events-none z-10" />
