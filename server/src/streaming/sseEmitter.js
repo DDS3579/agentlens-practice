@@ -160,3 +160,65 @@ export function sendError(res, errorMessage, sessionId) {
     }
   }, 200);
 }
+
+// server/src/streaming/sseEmitter.js
+// Add this function to the existing file
+
+/**
+ * Sends an agent diff event to the client
+ * Used for streaming code changes from the fix agent
+ * 
+ * @param {Object} res - Express response object (SSE stream)
+ * @param {Object} diffData - Diff event data
+ * @param {string} diffData.file - File path being edited
+ * @param {number} diffData.lineStart - Start line number (1-indexed)
+ * @param {number} diffData.lineEnd - End line number (1-indexed)
+ * @param {string} diffData.newContent - New content to replace/insert
+ * @param {string} diffData.editType - Type of edit: 'replace' | 'insert' | 'delete'
+ * @param {string} diffData.agentName - Name of the agent making the edit
+ * @param {string} diffData.message - Human-readable description of the change
+ */
+export function sendDiffEvent(res, {
+  file,
+  lineStart,
+  lineEnd,
+  newContent,
+  editType = 'replace',
+  agentName = 'FixAgent',
+  message = 'Applying fix...',
+}) {
+  sendSSEEvent(res, 'agent_diff', {
+    file,
+    lineStart,
+    lineEnd,
+    newContent,
+    editType,
+    agentName,
+    message,
+    timestamp: Date.now(),
+  });
+}
+
+/**
+ * Sends an agent edit complete event
+ * Called when all edits for a session are finished
+ * 
+ * @param {Object} res - Express response object (SSE stream)
+ * @param {Object} data - Optional completion data
+ */
+export function sendEditCompleteEvent(res, data = {}) {
+  sendSSEEvent(res, 'agent_edit_complete', {
+    ...data,
+    timestamp: Date.now(),
+  });
+}
+
+// Make sure to export the new functions
+export {
+  setupSSEHeaders,
+  sendSSEEvent,
+  createSSEStream,
+  sendError,
+  sendDiffEvent,      // NEW
+  sendEditCompleteEvent, // NEW
+};
