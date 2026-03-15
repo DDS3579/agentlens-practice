@@ -15,7 +15,6 @@ function Landing() {
           <div className="flex items-center justify-between h-full">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2">
-              <span className="text-2xl">🔍</span>
               <span className="text-xl font-bold text-white">
                 Agent
                 <span className="bg-gradient-to-r from-purple-500 to-purple-400 bg-clip-text text-transparent">
@@ -93,7 +92,6 @@ function Landing() {
             {/* Logo & Tagline */}
             <div className="md:col-span-1">
               <Link to="/" className="flex items-center gap-2 mb-4">
-                <span className="text-2xl">🔍</span>
                 <span className="text-xl font-bold text-white">
                   Agent
                   <span className="bg-gradient-to-r from-purple-500 to-purple-400 bg-clip-text text-transparent">

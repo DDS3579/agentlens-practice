@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { 
   LayoutDashboard, History, Settings, 
-  Menu, X 
+  Menu, X, ScanSearch
 } from 'lucide-react'
 
 // Safe fallback functions in case utils aren't available
@@ -109,7 +109,7 @@ function Navbar() {
           <div className="flex items-center justify-between h-full">
             {/* Left - Logo */}
             <Link to="/dashboard" className="flex items-center gap-2">
-              <span className="text-2xl">🔍</span>
+              <ScanSearch className="w-8 h-8 text-purple-500" />
               <div>
                 <h1 className="text-xl font-bold text-white leading-tight">
                   Agent

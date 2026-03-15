@@ -50,8 +50,8 @@ export default function Home() {
       <header className="border-b border-[#2d3748] bg-[#0a0b0f]/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-              <span className="text-xl">🔍</span>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-600/20 border border-purple-500/30 flex items-center justify-center">
+              <span className="text-lg font-bold text-white">A</span>
             </div>
             <div>
               <h1 className="text-xl font-bold text-white">AgentLens</h1>
