@@ -31,7 +31,7 @@ function Auth({ mode }) {
     <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-4">
       <Link to="/" className="hover:opacity-80 transition-opacity mb-8">
         <h1 className="text-3xl font-bold text-white flex items-center gap-2">
-          <span>🔍</span>
+          <span></span>
           Agent<span className="bg-gradient-to-r from-purple-500 to-purple-400 bg-clip-text text-transparent">Lens</span>
         </h1>
       </Link>

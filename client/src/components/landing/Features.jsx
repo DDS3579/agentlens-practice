@@ -421,10 +421,15 @@ const Features = () => {
         </div>
 
         {/* ─── Agent Cards ──────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-[6px] mb-20">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-[6px]">
           {AGENTS_DATA.map((agent, i) => (
             <AgentCard key={agent.name} agent={agent} index={i} />
           ))}
+        </div>
+
+        {/* Decorative Divider with Breathing Space */}
+        <div className="w-full py-20 pb-24">
+          <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
         </div>
 
         {/* ─── Platform Features Section ────────────────────────────────── */}

@@ -626,6 +626,11 @@ const HowItWorks = () => {
           ))}
         </div>
 
+        {/* Decorative Divider with Breathing Space */}
+        <div className="w-full py-20 pb-24">
+          <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+        </div>
+
         {/* ─── Agent Network Visualizations ─────────────────────────────── */}
         <div className="space-y-6">
           {/* Section sub-header */}

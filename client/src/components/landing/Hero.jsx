@@ -490,7 +490,7 @@ const Hero = () => {
                       size="lg"
                       className="relative bg-purple-600 hover:bg-purple-500 text-white px-8 py-6 text-lg rounded-xl shadow-lg shadow-purple-500/25 border border-white/10 transition-colors z-10"
                     >
-                      Go to Dashboard
+                    
                       <ArrowRight className="w-5 h-5 ml-2" />
                     </Button>
                   </motion.div>
