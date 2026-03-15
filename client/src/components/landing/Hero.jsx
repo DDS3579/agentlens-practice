@@ -422,12 +422,7 @@ const Hero = () => {
   return (
     <section className="relative min-h-screen bg-gray-950 overflow-hidden flex flex-col justify-start lg:justify-center lg:flex-row">
       {/* Background Layers */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background: 'radial-gradient(ellipse at 50% 0%, #1a0533 0%, transparent 70%)',
-        }}
-      />
+      {/* Background radial gradient removed as requested */}
       <CanvasOrbs />
       <BackgroundBlobs />
       <FloatingParticles />
@@ -446,7 +441,7 @@ const Hero = () => {
       </div>
 
       {/* Main Hero Section */}
-      <div className="relative z-10 w-full mx-auto px-4 sm:px-6 lg:px-8 py-20 flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-12">
+      <div className="relative z-10 w-full mx-auto px-6 sm:px-12 lg:px-20 xl:px-28 py-20 flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-12">
         {/* Left Column - Text Content */}
         <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start">
           {/* Product Tagline */}
@@ -461,13 +456,13 @@ const Hero = () => {
             <h1 className="font-display text-5xl sm:text-6xl lg:text-[4.5rem] xl:text-[5rem] font-extrabold text-white tracking-tight leading-[1.1] mb-6 max-w-2xl text-shadow-sm">
               4 AI Agents. <br className="hidden sm:block" />
               One Codebase.{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-purple-300 to-white drop-shadow-sm">
+              <span className="text-purple-400 drop-shadow-sm">
                 Zero Bugs.
               </span>
             </h1>
 
             {/* Rotating Subheadline */}
-            <div className="max-w-xl mx-auto lg:mx-0 mb-2">
+            <div className="max-w-xl mx-auto lg:mx-0 mb-4 leading-relaxed tracking-wide">
               <RotatingSubheadline />
             </div>
           </motion.div>

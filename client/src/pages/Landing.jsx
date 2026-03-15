@@ -2,7 +2,6 @@ import Hero from '../components/landing/Hero.jsx'
 import Features from '../components/landing/Features.jsx'
 import HowItWorks from '../components/landing/HowItWorks.jsx'
 import Pricing from '../components/landing/Pricing.jsx'
-import Testimonials from '../components/landing/Testimonials.jsx'
 import { Link } from 'react-router-dom'
 import { Github, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -55,9 +54,6 @@ function Landing() {
 
       {/* How It Works Section */}
       <HowItWorks />
-
-      {/* Testimonials Section */}
-      <Testimonials />
 
       {/* Pricing Section */}
       <Pricing />
