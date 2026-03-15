@@ -1,415 +1,655 @@
-import { useEffect, useRef, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Link } from 'react-router-dom'
-import { useAuth } from '@clerk/clerk-react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { ArrowRight, Github, Zap, Shield, FileText, GitBranch, Cpu } from 'lucide-react'
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '@clerk/clerk-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ArrowRight, Github, Zap, Shield, FileText, GitBranch, Cpu } from 'lucide-react';
 
-const agents = [
-  { name: 'Coordinator Agent', color: 'bg-purple-500', icon: Cpu },
-  { name: 'Security Agent', color: 'bg-red-500', icon: Shield },
-  { name: 'Writer Agent', color: 'bg-blue-500', icon: FileText },
-  { name: 'Architecture Agent', color: 'bg-green-500', icon: GitBranch },
-]
+// ─── Floating Code Snippets (Digital Rain) ──────────────────────────────────
+const CODE_SNIPPETS = [
+  'undefined', 'null', 'Error', 'NaN', 'segfault', '404',
+  'TypeError', 'SIGKILL', 'panic!', 'fatal', 'overflow', 'ENOENT'
+];
 
-const taglines = [
-  "4 specialized AI agents collaborate in real time.",
-  "Find security vulnerabilities with exact line numbers.",
-  "Generate documentation automatically.",
-  "Get architecture fixes that address root causes.",
-]
+const FloatingSnippet = ({ text, delay, duration, x }) => (
+  <motion.span
+    className="absolute text-purple-500/20 font-mono text-xs sm:text-sm pointer-events-none select-none"
+    initial={{ opacity: 0, y: -40, x }}
+    animate={{
+      opacity: [0, 0.3, 0.3, 0],
+      y: ['0vh', '100vh'],
+    }}
+    transition={{
+      duration,
+      delay,
+      repeat: Infinity,
+      ease: 'linear',
+    }}
+    style={{ left: `${x}%` }}
+  >
+    {text}
+  </motion.span>
+);
 
-// Static array of 12 particle configs generated once
-const particles = Array.from({ length: 12 }, (_, i) => ({
-  id: i,
-  x: Math.random() * 100,
-  y: Math.random() * 100,
-  size: Math.random() * 3 + 1,
-  duration: Math.random() * 4 + 4,
-  delay: Math.random() * 2,
-}))
+// ─── Canvas Background Orbs ─────────────────────────────────────────────────
+const CanvasOrbs = () => {
+  const canvasRef = useRef(null);
+  const animationRef = useRef(null);
+  const orbsRef = useRef([
+    { cx: 0.3, cy: 0.3, r: 250, color: [139, 92, 246], phaseX: 0, phaseY: 0.5, speedX: 0.0003, speedY: 0.0004 },
+    { cx: 0.7, cy: 0.6, r: 300, color: [124, 58, 237], phaseX: 1.5, phaseY: 1.0, speedX: 0.0005, speedY: 0.0003 },
+    { cx: 0.5, cy: 0.4, r: 200, color: [167, 139, 250], phaseX: 3.0, phaseY: 2.0, speedX: 0.0004, speedY: 0.0005 },
+    { cx: 0.2, cy: 0.7, r: 280, color: [139, 92, 246], phaseX: 4.5, phaseY: 3.5, speedX: 0.0003, speedY: 0.0002 },
+  ]);
 
-function Hero() {
-  const { isSignedIn } = useAuth()
-  const canvasRef = useRef(null)
-  const [currentTagline, setCurrentTagline] = useState(0)
-  const [agentStates, setAgentStates] = useState([
-    { status: 'Waiting...', color: 'text-gray-400', borderColor: 'border-gray-500/30' },
-    { status: 'Waiting...', color: 'text-gray-400', borderColor: 'border-gray-500/30' },
-    { status: 'Waiting...', color: 'text-gray-400', borderColor: 'border-gray-500/30' },
-    { status: 'Waiting...', color: 'text-gray-400', borderColor: 'border-gray-500/30' },
-  ])
+  const draw = useCallback((time) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const h = canvas.height;
 
-  // Canvas gradient mesh background
+    ctx.clearRect(0, 0, w, h);
+
+    orbsRef.current.forEach((orb) => {
+      const x = w * orb.cx + Math.sin(time * orb.speedX + orb.phaseX) * w * 0.15;
+      const y = h * orb.cy + Math.cos(time * orb.speedY + orb.phaseY) * h * 0.1;
+
+      const gradient = ctx.createRadialGradient(x, y, 0, x, y, orb.r);
+      gradient.addColorStop(0, `rgba(${orb.color.join(',')}, 0.1)`);
+      gradient.addColorStop(1, `rgba(${orb.color.join(',')}, 0)`);
+
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(x, y, orb.r, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    animationRef.current = requestAnimationFrame(draw);
+  }, []);
+
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    let animFrame
-    let time = 0
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
     const resize = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
-    }
-    resize()
-    window.addEventListener('resize', resize)
-
-    const animate = () => {
-      time += 0.003
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-      // Draw 4 slow-moving gradient orbs
-      const orbs = [
-        { x: Math.sin(time * 0.7) * 0.3 + 0.3, y: Math.cos(time * 0.5) * 0.3 + 0.2, color: 'rgba(139,92,246,0.12)', r: 0.4 },
-        { x: Math.cos(time * 0.4) * 0.3 + 0.7, y: Math.sin(time * 0.6) * 0.3 + 0.7, color: 'rgba(109,40,217,0.10)', r: 0.35 },
-        { x: Math.sin(time * 0.5) * 0.2 + 0.5, y: Math.cos(time * 0.8) * 0.2 + 0.4, color: 'rgba(167,139,250,0.08)', r: 0.3 },
-        { x: Math.cos(time * 0.3) * 0.4 + 0.2, y: Math.sin(time * 0.4) * 0.3 + 0.8, color: 'rgba(79,70,229,0.09)', r: 0.45 },
-      ]
-
-      orbs.forEach(orb => {
-        const x = orb.x * canvas.width
-        const y = orb.y * canvas.height
-        const r = orb.r * Math.max(canvas.width, canvas.height)
-        const grad = ctx.createRadialGradient(x, y, 0, x, y, r)
-        grad.addColorStop(0, orb.color)
-        grad.addColorStop(1, 'transparent')
-        ctx.fillStyle = grad
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
-      })
-
-      animFrame = requestAnimationFrame(animate)
-    }
-    animate()
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+    animationRef.current = requestAnimationFrame(draw);
 
     return () => {
-      cancelAnimationFrame(animFrame)
-      window.removeEventListener('resize', resize)
-    }
-  }, [])
-
-  // Typewriter effect
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTagline((prev) => (prev + 1) % taglines.length)
-    }, 3500)
-    return () => clearInterval(interval)
-  }, [])
-
-  // Agent states animation cycle
-  useEffect(() => {
-    const runCycle = () => {
-      const timeouts = []
-
-      // Reset all to waiting
-      setAgentStates([
-        { status: 'Waiting...', color: 'text-gray-400', borderColor: 'border-gray-500/30' },
-        { status: 'Waiting...', color: 'text-gray-400', borderColor: 'border-gray-500/30' },
-        { status: 'Waiting...', color: 'text-gray-400', borderColor: 'border-gray-500/30' },
-        { status: 'Waiting...', color: 'text-gray-400', borderColor: 'border-gray-500/30' },
-      ])
-
-      // After 1s: Coordinator → "Planning..." (yellow)
-      timeouts.push(setTimeout(() => {
-        setAgentStates(prev => [
-          { status: 'Planning...', color: 'text-yellow-400', borderColor: 'border-yellow-500/30' },
-          prev[1],
-          prev[2],
-          prev[3],
-        ])
-      }, 1000))
-
-      // After 2s: Coordinator → "Complete ✓" (green), Security → "Scanning..."
-      timeouts.push(setTimeout(() => {
-        setAgentStates(prev => [
-          { status: 'Complete ✓', color: 'text-green-400', borderColor: 'border-green-500/30' },
-          { status: 'Scanning...', color: 'text-yellow-400', borderColor: 'border-yellow-500/30' },
-          prev[2],
-          prev[3],
-        ])
-      }, 2000))
-
-      // After 3.5s: Security → "Complete ✓", Writer → "Writing..."
-      timeouts.push(setTimeout(() => {
-        setAgentStates(prev => [
-          prev[0],
-          { status: 'Complete ✓', color: 'text-green-400', borderColor: 'border-green-500/30' },
-          { status: 'Writing...', color: 'text-yellow-400', borderColor: 'border-yellow-500/30' },
-          prev[3],
-        ])
-      }, 3500))
-
-      // After 5s: Writer → "Complete ✓", Architecture → "Reviewing..."
-      timeouts.push(setTimeout(() => {
-        setAgentStates(prev => [
-          prev[0],
-          prev[1],
-          { status: 'Complete ✓', color: 'text-green-400', borderColor: 'border-green-500/30' },
-          { status: 'Reviewing...', color: 'text-yellow-400', borderColor: 'border-yellow-500/30' },
-        ])
-      }, 5000))
-
-      // After 6.5s: Architecture → "Complete ✓"
-      timeouts.push(setTimeout(() => {
-        setAgentStates(prev => [
-          prev[0],
-          prev[1],
-          prev[2],
-          { status: 'Complete ✓', color: 'text-green-400', borderColor: 'border-green-500/30' },
-        ])
-      }, 6500))
-
-      return timeouts
-    }
-
-    let timeouts = runCycle()
-
-    // After 8s: reset and loop
-    const interval = setInterval(() => {
-      timeouts.forEach(t => clearTimeout(t))
-      timeouts = runCycle()
-    }, 8000)
-
-    return () => {
-      timeouts.forEach(t => clearTimeout(t))
-      clearInterval(interval)
-    }
-  }, [])
-
-  const triggerDemo = () => {
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'D', ctrlKey: true, shiftKey: true }))
-  }
+      window.removeEventListener('resize', resize);
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    };
+  }, [draw]);
 
   return (
-    <section className="relative min-h-screen bg-gray-950 bg-[radial-gradient(ellipse_at_top,_#1a0533_0%,_transparent_60%)] overflow-hidden">
-      {/* Animated Canvas Gradient Mesh Background */}
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 w-full h-full pointer-events-none"
-      />
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 w-full h-full pointer-events-none"
+      style={{ zIndex: 0 }}
+    />
+  );
+};
 
-      {/* Floating Particles */}
-      {particles.map((particle) => (
+// ─── Floating Particles ─────────────────────────────────────────────────────
+const FloatingParticles = () => {
+  const particles = Array.from({ length: 12 }, (_, i) => ({
+    id: i,
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+    size: Math.random() * 3 + 2,
+    duration: Math.random() * 4 + 4,
+    delay: Math.random() * 4,
+  }));
+
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
+      {particles.map((p) => (
         <motion.div
-          key={particle.id}
-          className="absolute rounded-full pointer-events-none"
+          key={p.id}
+          className="absolute rounded-full bg-purple-400"
           style={{
-            left: `${particle.x}%`,
-            top: `${particle.y}%`,
-            width: `${particle.size}px`,
-            height: `${particle.size}px`,
-            background: 'rgba(139,92,246,0.6)',
+            width: p.size,
+            height: p.size,
+            left: `${p.x}%`,
+            top: `${p.y}%`,
+            opacity: 0.6,
           }}
           animate={{
-            y: [-10, 10, -10],
-            opacity: [0.3, 0.8, 0.3],
+            y: [0, -20, 0, 15, 0],
+            opacity: [0.4, 0.7, 0.4],
           }}
           transition={{
+            duration: p.duration,
+            delay: p.delay,
             repeat: Infinity,
-            duration: particle.duration,
-            delay: particle.delay,
             ease: 'easeInOut',
           }}
         />
       ))}
+    </div>
+  );
+};
 
-      {/* Animated Background Blobs */}
-      <motion.div
-        className="absolute top-20 left-1/4 w-96 h-96 bg-purple-600 rounded-full blur-3xl opacity-20"
-        animate={{ y: [0, 20, 0] }}
-        transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-      />
-      <motion.div
-        className="absolute top-40 right-1/4 w-80 h-80 bg-violet-600 rounded-full blur-3xl opacity-20"
-        animate={{ y: [0, -20, 0] }}
-        transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
-      />
-      <motion.div
-        className="absolute bottom-20 left-1/3 w-72 h-72 bg-purple-500 rounded-full blur-3xl opacity-20"
-        animate={{ y: [0, 15, 0] }}
-        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-      />
+// ─── Background Blobs ───────────────────────────────────────────────────────
+const BackgroundBlobs = () => (
+  <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
+    <motion.div
+      className="absolute -top-1/4 -left-1/4 w-[600px] h-[600px] rounded-full bg-purple-600/10 blur-[120px]"
+      animate={{ y: [0, 40, 0] }}
+      transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+    />
+    <motion.div
+      className="absolute top-1/3 -right-1/4 w-[500px] h-[500px] rounded-full bg-violet-600/8 blur-[100px]"
+      animate={{ y: [0, -30, 0] }}
+      transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+    />
+    <motion.div
+      className="absolute -bottom-1/4 left-1/3 w-[450px] h-[450px] rounded-full bg-purple-500/6 blur-[110px]"
+      animate={{ y: [0, 25, 0] }}
+      transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
+    />
+  </div>
+);
 
-      {/* Content */}
-      <div className="relative z-10 flex flex-col items-center justify-center text-center px-4 pt-32 pb-20">
-        {/* Badge */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0 }}
-        >
-          <Badge className="bg-purple-500/10 text-purple-400 border-purple-500/30 px-4 py-2 text-sm">
-            <Zap className="w-4 h-4 mr-2 inline" />
-            Powered by LLaMA 3.3 · 4 Specialized Agents
-          </Badge>
-        </motion.div>
+// ─── Glitch Text Effect for "BUGS" ─────────────────────────────────────────
+const GlitchText = ({ children }) => {
+  const [glitch, setGlitch] = useState(false);
 
-        {/* Main Heading */}
-        <motion.h1
-          className="font-display text-5xl md:text-7xl font-bold mt-8"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
-          <span className="text-white">Analyze Any GitHub Repo</span>
-          <br />
-          <span className="bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent">
-            With AI Agent Teams
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setGlitch(true);
+      setTimeout(() => setGlitch(false), 200);
+    }, 3000 + Math.random() * 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <span className="relative inline-block">
+      <span className={`relative ${glitch ? 'opacity-0' : 'opacity-100'} transition-opacity duration-50`}>
+        {children}
+      </span>
+      {glitch && (
+        <>
+          <span
+            className="absolute inset-0 text-red-400"
+            style={{ transform: 'translate(-2px, -1px)', clipPath: 'inset(0 0 50% 0)' }}
+          >
+            {children}
           </span>
-        </motion.h1>
+          <span
+            className="absolute inset-0 text-cyan-400"
+            style={{ transform: 'translate(2px, 1px)', clipPath: 'inset(50% 0 0 0)' }}
+          >
+            {children}
+          </span>
+          <span className="absolute inset-0 text-white">
+            {children}
+          </span>
+        </>
+      )}
+    </span>
+  );
+};
 
-        {/* Subheading with Typewriter Effect */}
-        <motion.div
-          className="text-gray-400 text-xl max-w-2xl mt-6 h-8"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <AnimatePresence mode="wait">
-            <motion.p
-              key={currentTagline}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.5 }}
-            >
-              {taglines[currentTagline]}
-            </motion.p>
-          </AnimatePresence>
-        </motion.div>
+// ─── Word-by-Word Reveal ────────────────────────────────────────────────────
+const WordReveal = ({ words, className, delayStart = 0 }) => (
+  <span className={className}>
+    {words.map((word, i) => (
+      <motion.span
+        key={i}
+        className="inline-block mr-[0.3em]"
+        initial={{ opacity: 0, y: 20, filter: 'blur(8px)' }}
+        animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+        transition={{
+          duration: 0.5,
+          delay: delayStart + i * 0.12,
+          ease: [0.25, 0.46, 0.45, 0.94],
+        }}
+      >
+        {word === 'BUGS' ? <GlitchText>{word}</GlitchText> : word}
+      </motion.span>
+    ))}
+  </span>
+);
 
-        {/* CTA Buttons */}
-        <motion.div
-          className="flex flex-col sm:flex-row gap-4 mt-10"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-        >
-          {isSignedIn ? (
-            <Button
-              asChild
-              size="lg"
-              className="bg-purple-600 hover:bg-purple-700 text-white px-8"
-            >
-              <Link to="/dashboard">
-                Go to Dashboard
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Link>
-            </Button>
-          ) : (
-            <>
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button
-                  asChild
-                  size="lg"
-                  className="bg-purple-600 hover:bg-purple-700 text-white px-8"
-                >
-                  <Link to="/register">
-                    Start Analyzing Free
-                    <ArrowRight className="w-5 h-5 ml-2" />
-                  </Link>
-                </Button>
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={triggerDemo}
-                  className="border-white/20 text-white hover:bg-white/10 px-8"
-                >
-                  <Github className="w-5 h-5 mr-2" />
-                  View Demo
-                </Button>
-              </motion.div>
-            </>
-          )}
-        </motion.div>
+// ─── Terminal Agent Row ─────────────────────────────────────────────────────
+const AGENTS = [
+  { name: 'Coordinator Agent', icon: Cpu, color: 'text-purple-400', bgColor: 'bg-purple-400' },
+  { name: 'Security Agent', icon: Shield, color: 'text-red-400', bgColor: 'bg-red-400' },
+  { name: 'Writer Agent', icon: FileText, color: 'text-blue-400', bgColor: 'bg-blue-400' },
+  { name: 'Architecture Agent', icon: GitBranch, color: 'text-green-400', bgColor: 'bg-green-400' },
+];
 
-        {/* Social Proof */}
-        <motion.p
-          className="text-gray-500 text-sm mt-6"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-        >
-          No credit card required · 5 free analyses/month · Setup in 30 seconds
-        </motion.p>
+const STATUS_TIMELINE = [
+  // [time, agentIndex, status, statusType]
+  { time: 0, statuses: ['Waiting...', 'Waiting...', 'Waiting...', 'Waiting...'], types: ['gray', 'gray', 'gray', 'gray'] },
+  { time: 1000, statuses: ['Planning...', 'Waiting...', 'Waiting...', 'Waiting...'], types: ['yellow', 'gray', 'gray', 'gray'] },
+  { time: 2000, statuses: ['Complete ✓', 'Scanning...', 'Waiting...', 'Waiting...'], types: ['green', 'yellow', 'gray', 'gray'] },
+  { time: 3500, statuses: ['Complete ✓', 'Complete ✓', 'Writing...', 'Waiting...'], types: ['green', 'green', 'yellow', 'gray'] },
+  { time: 5000, statuses: ['Complete ✓', 'Complete ✓', 'Complete ✓', 'Reviewing...'], types: ['green', 'green', 'green', 'yellow'] },
+  { time: 6500, statuses: ['Complete ✓', 'Complete ✓', 'Complete ✓', 'Complete ✓'], types: ['green', 'green', 'green', 'green'] },
+];
 
-        {/* Hero Terminal Card */}
-        <motion.div
-          className="bg-gray-900 border border-white/10 rounded-2xl p-6 max-w-2xl w-full mt-12"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-        >
-          {/* Terminal Header */}
-          <div className="flex items-center gap-2 mb-4 pb-4 border-b border-white/10">
+const StatusBadge = ({ status, type }) => {
+  const colors = {
+    gray: 'bg-gray-700/50 text-gray-400 border-gray-600/50',
+    yellow: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30',
+    green: 'bg-green-500/10 text-green-400 border-green-500/30',
+  };
+
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${colors[type]}`}>
+      {type === 'yellow' && (
+        <motion.span
+          className="w-1.5 h-1.5 rounded-full bg-yellow-400"
+          animate={{ opacity: [1, 0.3, 1] }}
+          transition={{ duration: 1, repeat: Infinity }}
+        />
+      )}
+      {status}
+    </span>
+  );
+};
+
+const HeroTerminal = () => {
+  const [step, setStep] = useState(0);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const CYCLE_DURATION = 8000;
+    const times = [0, 1000, 2000, 3500, 5000, 6500];
+    let timeouts = [];
+    let progressInterval;
+
+    const runCycle = () => {
+      setStep(0);
+      setProgress(0);
+
+      times.forEach((time, index) => {
+        const timeout = setTimeout(() => {
+          setStep(index);
+        }, time);
+        timeouts.push(timeout);
+      });
+
+      // Progress bar
+      const startTime = Date.now();
+      progressInterval = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const p = Math.min((elapsed / 6500) * 100, 100);
+        setProgress(p);
+      }, 50);
+    };
+
+    runCycle();
+    const cycleInterval = setInterval(() => {
+      timeouts.forEach(clearTimeout);
+      clearInterval(progressInterval);
+      runCycle();
+    }, CYCLE_DURATION);
+
+    return () => {
+      timeouts.forEach(clearTimeout);
+      clearInterval(progressInterval);
+      clearInterval(cycleInterval);
+    };
+  }, []);
+
+  const currentStatuses = STATUS_TIMELINE[step] || STATUS_TIMELINE[0];
+
+  return (
+    <motion.div
+      className="w-full max-w-2xl mx-auto"
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8, delay: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
+    >
+      <div className="bg-gray-900 border border-white/10 rounded-2xl overflow-hidden shadow-2xl shadow-purple-500/5">
+        {/* Window Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-gray-900/80">
+          <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-red-500" />
             <div className="w-3 h-3 rounded-full bg-yellow-500" />
             <div className="w-3 h-3 rounded-full bg-green-500" />
-            <span className="text-gray-500 text-sm ml-2 font-mono">AgentLens Analysis</span>
           </div>
+          <span className="text-xs text-gray-500 font-mono">AgentLens Analysis</span>
+          <div className="w-14" />
+        </div>
 
-          {/* Agent Status Rows */}
-          <div className="space-y-3">
-            {agents.map((agent, index) => {
-              const Icon = agent.icon
-              const state = agentStates[index]
-              const isActive = state.status.includes('...') && state.status !== 'Waiting...'
-              return (
-                <motion.div
-                  key={agent.name}
-                  className="flex items-center justify-between bg-gray-800/50 rounded-lg px-4 py-3"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.4, delay: 0.7 + index * 0.1 }}
-                >
-                  <div className="flex items-center gap-3">
-                    <motion.div
-                      className={`w-2 h-2 rounded-full ${
-                        state.status === 'Complete ✓'
-                          ? 'bg-green-500'
-                          : state.status === 'Waiting...'
-                          ? 'bg-gray-500'
-                          : 'bg-yellow-500'
-                      }`}
-                      animate={isActive ? { opacity: [1, 0.5, 1] } : { opacity: 1 }}
-                      transition={isActive ? { duration: 0.8, repeat: Infinity } : {}}
-                    />
-                    <Icon className="w-4 h-4 text-gray-400" />
-                    <span className="text-white text-sm font-medium">{agent.name}</span>
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className={`text-xs ${state.color} ${state.borderColor}`}
-                  >
-                    {state.status}
-                  </Badge>
-                </motion.div>
-              )
-            })}
-          </div>
+        {/* Agent Rows */}
+        <div className="p-4 space-y-3">
+          {AGENTS.map((agent, i) => {
+            const Icon = agent.icon;
+            return (
+              <motion.div
+                key={agent.name}
+                className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-800/40 border border-white/5"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.9 + i * 0.1 }}
+              >
+                <div className="flex items-center gap-3">
+                  <Icon className={`w-4 h-4 ${agent.color}`} />
+                  <span className="text-sm text-gray-300 font-medium">{agent.name}</span>
+                </div>
+                <StatusBadge
+                  status={currentStatuses.statuses[i]}
+                  type={currentStatuses.types[i]}
+                />
+              </motion.div>
+            );
+          })}
 
-          {/* Progress Line */}
-          <div className="mt-4 pt-4 border-t border-white/10">
-            <div className="flex items-center justify-between text-sm mb-2">
-              <span className="text-gray-400">Analysis Progress</span>
-              <span className="text-purple-400">68%</span>
+          {/* Progress Bar */}
+          <div className="mt-4 pt-3 border-t border-white/5">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-gray-500">Analysis Progress</span>
+              <span className="text-xs text-gray-400 font-mono">{Math.round(progress)}%</span>
             </div>
             <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
               <motion.div
-                className="h-full bg-gradient-to-r from-purple-600 to-violet-500 rounded-full"
-                initial={{ width: '0%' }}
-                animate={{ width: '68%' }}
-                transition={{ duration: 1.5, delay: 1.1, ease: 'easeOut' }}
+                className="h-full rounded-full"
+                style={{
+                  width: `${progress}%`,
+                  background: 'linear-gradient(90deg, #9333ea, #8b5cf6)',
+                }}
+                transition={{ duration: 0.1 }}
               />
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
-    </section>
-  )
-}
+    </motion.div>
+  );
+};
 
-export default Hero
+// ─── Rotating Subheadlines ──────────────────────────────────────────────────
+const SUBHEADLINES = [
+  '4 specialized AI agents collaborate in real time.',
+  'Find security vulnerabilities with exact line numbers.',
+  'Generate documentation automatically.',
+  'Get architecture fixes that address root causes.',
+];
+
+const RotatingSubheadline = () => {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIndex((prev) => (prev + 1) % SUBHEADLINES.length);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="h-8 relative flex items-center justify-center">
+      <AnimatePresence mode="wait">
+        <motion.p
+          key={index}
+          className="text-gray-400 text-base sm:text-lg absolute"
+          initial={{ opacity: 0, y: 15, filter: 'blur(4px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          exit={{ opacity: 0, y: -15, filter: 'blur(4px)' }}
+          transition={{ duration: 0.5 }}
+        >
+          {SUBHEADLINES[index]}
+        </motion.p>
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// ─── Main Hero Component ────────────────────────────────────────────────────
+const Hero = () => {
+  const { isSignedIn } = useAuth();
+  const navigate = useNavigate();
+  const [repoUrl, setRepoUrl] = useState('');
+  const [showLayer2, setShowLayer2] = useState(false);
+  const [showLayer3, setShowLayer3] = useState(false);
+  const [hideHeroText, setHideHeroText] = useState(false);
+  const heroRef = useRef(null);
+
+  useEffect(() => {
+    const timer2 = setTimeout(() => setShowLayer2(true), 2000);
+    const timer3 = setTimeout(() => setShowLayer3(true), 3800);
+    // Auto-hide hero text after animations complete (after Layer 3 fully appears)
+    const timerHide = setTimeout(() => setHideHeroText(true), 6000);
+    return () => {
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+      clearTimeout(timerHide);
+    };
+  }, []);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (repoUrl.trim()) {
+      navigate(`/dashboard?repo=${encodeURIComponent(repoUrl.trim())}`);
+    }
+  };
+
+  return (
+    <section className="relative min-h-screen bg-gray-950 overflow-hidden flex flex-col items-center justify-center" ref={heroRef}>
+      {/* Background Layers */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: 'radial-gradient(ellipse at 50% 0%, #1a0533 0%, transparent 70%)',
+        }}
+      />
+      <CanvasOrbs />
+      <BackgroundBlobs />
+      <FloatingParticles />
+
+      {/* Floating Code Snippets (Digital Rain) */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
+        {CODE_SNIPPETS.map((snippet, i) => (
+          <FloatingSnippet
+            key={i}
+            text={snippet}
+            delay={i * 1.5 + Math.random() * 3}
+            duration={12 + Math.random() * 8}
+            x={5 + (i * 8) + Math.random() * 5}
+          />
+        ))}
+      </div>
+
+      {/* Main Content */}
+      <div className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20 flex flex-col items-center">
+        {/* LAYER 1: Dramatic Opening */}
+        <AnimatePresence>
+          {!hideHeroText && (
+            <motion.div
+              className="text-center mb-6"
+              animate={showLayer3 ? { opacity: 0.3, scale: 0.85, y: -30 } : {}}
+              exit={{ opacity: 0, scale: 0.95, filter: 'blur(8px)' }}
+              transition={{ duration: 1, ease: 'easeInOut' }}
+            >
+              <h1 className="font-display text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-tight leading-tight">
+                <WordReveal
+                  words={['ARE', 'YOU', 'TIRED', 'OF']}
+                  delayStart={0.2}
+                />
+                <br />
+                <WordReveal
+                  words={['BUGS', 'EATING', 'UP']}
+                  delayStart={0.8}
+                />
+                <br />
+                <WordReveal
+                  words={['YOUR', 'CODE?']}
+                  delayStart={1.3}
+                />
+              </h1>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* LAYER 2: Relief */}
+        <AnimatePresence>
+          {showLayer2 && !hideHeroText && (
+            <motion.div
+              className="text-center mb-10 relative"
+              initial={{ opacity: 0, y: 20 }}
+              animate={showLayer3 ? { opacity: 0.3, scale: 0.9, y: -20 } : { opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, filter: 'blur(8px)' }}
+              transition={{ duration: 0.8, ease: 'easeOut' }}
+            >
+              {/* Glow behind text */}
+              <motion.div
+                className="absolute inset-0 -z-10 blur-[60px] bg-purple-500/20 rounded-full mx-auto"
+                style={{ width: '60%', height: '120%', left: '20%', top: '-10%' }}
+                animate={{ opacity: [0.15, 0.3, 0.15] }}
+                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+              />
+              <h2
+                className="font-display text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight"
+                style={{
+                  background: 'linear-gradient(135deg, #c084fc, #a78bfa)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}
+              >
+                WE HAVE GOT YOU COVERED.
+              </h2>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* LAYER 3: Product Introduction */}
+        <AnimatePresence>
+          {showLayer3 && (
+            <motion.div
+              className="w-full flex flex-col items-center gap-8"
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
+            >
+              {/* Product Tagline */}
+              <motion.div
+                className="text-center"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1, duration: 0.6 }}
+              >
+                <div className="flex items-center justify-center gap-2 mb-6">
+                  <Badge className="bg-purple-500/10 text-purple-400 border border-purple-500/20 hover:bg-purple-500/20 px-4 py-2 text-base">
+                    <Zap className="w-4 h-4 mr-2" />
+                    AI-Powered
+                  </Badge>
+                </div>
+                <h2 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-tight mb-6">
+                  AgentLens — 4 AI Agents. One Codebase.{' '}
+                  <span
+                    style={{
+                      background: 'linear-gradient(135deg, #c084fc, #a78bfa)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text',
+                    }}
+                  >
+                    Zero Bugs.
+                  </span>
+                </h2>
+
+                {/* Rotating Subheadline */}
+                <div className="text-xl sm:text-2xl text-gray-300">
+                  <RotatingSubheadline />
+                </div>
+              </motion.div>
+
+              {/* CTA Section */}
+              <motion.div
+                className="w-full max-w-xl mx-auto"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.6 }}
+              >
+                {isSignedIn ? (
+                  <div className="flex justify-center">
+                    <Link to="/dashboard">
+                      <motion.div
+                        whileHover={{ scale: 1.03, y: -2 }}
+                        whileTap={{ scale: 0.98 }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                      >
+                        <Button
+                          size="lg"
+                          className="bg-purple-600 hover:bg-purple-500 text-white px-8 py-6 text-lg rounded-xl shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-shadow"
+                        >
+                          Go to Dashboard
+                          <ArrowRight className="w-5 h-5 ml-2" />
+                        </Button>
+                      </motion.div>
+                    </Link>
+                  </div>
+                ) : (
+                  <>
+                    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
+                      <div className="relative flex-1">
+                        <Github className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                        <input
+                          type="url"
+                          value={repoUrl}
+                          onChange={(e) => setRepoUrl(e.target.value)}
+                          placeholder="Paste your GitHub repo URL..."
+                          className="w-full bg-gray-900 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all text-sm sm:text-base"
+                        />
+                      </div>
+                      <motion.div
+                        whileHover={{ scale: 1.03, y: -1 }}
+                        whileTap={{ scale: 0.98 }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                      >
+                        <Button
+                          type="submit"
+                          size="lg"
+                          className="w-full sm:w-auto bg-purple-600 hover:bg-purple-500 text-white px-6 py-3.5 rounded-xl shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-shadow whitespace-nowrap"
+                        >
+                          Analyze My Repo
+                          <ArrowRight className="w-4 h-4 ml-2" />
+                        </Button>
+                      </motion.div>
+                    </form>
+
+                    {/* Micro-copy */}
+                    <motion.p
+                      className="text-center text-gray-500 text-xs sm:text-sm mt-4"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.5 }}
+                    >
+                      No credit card required · 5 free analyses/month · Setup in 30 seconds
+                    </motion.p>
+                  </>
+                )}
+              </motion.div>
+
+              {/* Hero Terminal Card */}
+              <motion.div
+                className="w-full mt-4"
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6, duration: 0.8 }}
+              >
+                <HeroTerminal />
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Bottom fade gradient */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-gray-950 to-transparent pointer-events-none z-10" />
+    </section>
+  );
+};
+
+export default Hero;
