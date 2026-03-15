@@ -9,13 +9,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { 
+import {
   Zap, CreditCard, Calendar, CheckCircle,
   AlertCircle, ExternalLink, Mail, ArrowRight,
   Shield, Clock, FileCode, Bug
 } from 'lucide-react'
 import { FadeIn, StaggerContainer } from '../components/ui/AnimatedPage.jsx'
-import { CountUp } from '../components/ui/CountUp.jsx'
+import CountUp from '../components/ui/CountUp.jsx'
 
 const Billing = () => {
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false)
@@ -132,9 +132,9 @@ const Billing = () => {
                   </>
                 ) : (
                   <>
-                    <UsageIndicator 
-                      used={5 - (analysesRemaining || 0)} 
-                      total={5} 
+                    <UsageIndicator
+                      used={5 - (analysesRemaining || 0)}
+                      total={5}
                       showLabel={false}
                     />
                     <p className="text-gray-400 text-sm">
@@ -149,8 +149,8 @@ const Billing = () => {
               <>
                 <Separator className="my-6 bg-white/10" />
                 <div className="flex justify-end">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={handleManageSubscription}
                     className="gap-2"
                   >
@@ -230,8 +230,8 @@ const Billing = () => {
                     </p>
                   </div>
 
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={() => setShowUpgradePrompt(false)}
                     className="mb-4"
                   >
@@ -287,14 +287,14 @@ const Billing = () => {
                   </ul>
 
                   <div className="flex gap-4">
-                    <Button 
+                    <Button
                       variant="default"
                       onClick={() => setShowDowngradeConfirm(false)}
                       className="bg-purple-600 hover:bg-purple-500"
                     >
                       Keep Pro
                     </Button>
-                    <Button 
+                    <Button
                       variant="outline"
                       onClick={handleDowngrade}
                       className="border-red-500 text-red-400 hover:bg-red-500/10"

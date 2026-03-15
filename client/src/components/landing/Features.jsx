@@ -1,7 +1,7 @@
 
 import { motion } from 'framer-motion'
 import { useInView } from 'react-intersection-observer'
-import { CountUp } from '../ui/CountUp.jsx'
+import CountUp from '../ui/CountUp.jsx'
 import { Shield, FileText, GitBranch, Zap, Lock, Cpu, Target, Building2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 

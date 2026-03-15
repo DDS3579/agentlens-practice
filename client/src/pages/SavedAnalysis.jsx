@@ -9,14 +9,14 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { 
-  ArrowLeft, Bug, FileCode, Clock, 
+import {
+  ArrowLeft, Bug, FileCode, Clock,
   ExternalLink, Calendar, Share2,
   Download, CheckCircle, XCircle, AlertCircle
 } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
 import { PageSkeleton } from '../components/ui/SkeletonCard.jsx'
-import { CountUp } from '../components/ui/CountUp.jsx'
+import CountUp from '../components/ui/CountUp.jsx'
 import { FadeIn } from '../components/ui/AnimatedPage.jsx'
 
 export default function SavedAnalysis() {
@@ -37,7 +37,7 @@ export default function SavedAnalysis() {
         const res = await fetch(`/api/history/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         })
-        
+
         if (!res.ok) {
           if (res.status === 404) {
             setError({ status: 404, message: "This analysis doesn't exist or you don't have access to it" })
@@ -46,7 +46,7 @@ export default function SavedAnalysis() {
           }
           return
         }
-        
+
         const data = await res.json()
         setAnalysis(data.analysis)
       } catch (err) {
@@ -63,21 +63,21 @@ export default function SavedAnalysis() {
     if (analysis?.results) {
       const store = useAgentStore.getState()
       store.resetSession()
-      
+
       const { bugs, documentation, refactors, summary, plan } = analysis.results
-      
+
       if (bugs && Array.isArray(bugs)) {
         bugs.forEach(bug => store.handleSSEEvent('agent_finding', { type: 'bug', data: bug }))
       }
-      
+
       if (documentation) {
         store.handleSSEEvent('agent_finding', { type: 'documentation', data: documentation })
       }
-      
+
       if (refactors && Array.isArray(refactors)) {
         refactors.forEach(r => store.handleSSEEvent('agent_finding', { type: 'refactor', data: r }))
       }
-      
+
       if (summary) {
         store.handleSSEEvent('session_status', { status: 'completed', summary })
       }
@@ -127,7 +127,7 @@ export default function SavedAnalysis() {
     if (!isPro) {
       return
     }
-    
+
     try {
       await navigator.clipboard.writeText(window.location.href)
       setCopied(true)
@@ -364,11 +364,10 @@ export default function SavedAnalysis() {
                     size="sm"
                     onClick={handleShare}
                     disabled={!isPro}
-                    className={`border-white/10 ${
-                      copied 
-                        ? 'bg-green-500/20 text-green-400 border-green-500/30' 
-                        : 'text-gray-300 hover:bg-gray-800'
-                    } ${!isPro ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    className={`border-white/10 ${copied
+                      ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                      : 'text-gray-300 hover:bg-gray-800'
+                      } ${!isPro ? 'opacity-50 cursor-not-allowed' : ''}`}
                     title={!isPro ? 'Sharing requires Pro' : ''}
                   >
                     {copied ? (

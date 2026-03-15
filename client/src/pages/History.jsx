@@ -18,7 +18,7 @@ import {
 import { formatDistanceToNow, format } from 'date-fns'
 import { AnalysisItemSkeleton } from '../components/ui/SkeletonCard.jsx'
 import { FadeIn, StaggerContainer } from '../components/ui/AnimatedPage.jsx'
-import { CountUp } from '../components/ui/CountUp.jsx'
+import CountUp from '../components/ui/CountUp.jsx'
 
 export default function History() {
   const [searchQuery, setSearchQuery] = useState('')
