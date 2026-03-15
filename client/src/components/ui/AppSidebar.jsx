@@ -26,6 +26,11 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import UserProfileDropdown from "./UserProfileDropdown";
+import { useCallback } from "react";
+import useAuthStore from "../../store/authStore";
+import useAgentStore from "../../store/agentStore";
+import useFixStore from "../../store/fixStore";
+import CustomAgentPanel from "../agents/CustomAgentPanel";
 
 // Navigation items configuration - updated paths to match your routes
 const navigationItems = [
@@ -79,7 +84,7 @@ function AgentLensLogo() {
 function UsageIndicator() {
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
-  
+
   // TODO: Connect to your actual billing store
   // import { useBillingStore } from '@/stores/billingStore'
   // const { usedAnalyses, maxAnalyses } = useBillingStore()
@@ -91,7 +96,7 @@ function UsageIndicator() {
   if (isCollapsed) {
     return (
       <div className="flex items-center justify-center px-2 py-3">
-        <div 
+        <div
           className="relative flex h-8 w-8 items-center justify-center rounded-full"
           title={`${remainingAnalyses} analyses remaining`}
         >
@@ -139,10 +144,7 @@ function UsageIndicator() {
             {remainingAnalyses} left
           </span>
         </div>
-        <Progress 
-          value={usagePercentage} 
-          className="h-1.5 bg-sidebar-accent"
-        />
+        <Progress value={usagePercentage} className="h-1.5 bg-sidebar-accent" />
         <p className="mt-2 text-[10px] text-sidebar-foreground/50">
           {usedAnalyses} of {maxAnalyses} analyses used this month
         </p>
@@ -179,9 +181,10 @@ function NavigationMenu() {
               tooltip={isCollapsed ? item.title : undefined}
               className={`
                 group relative transition-all duration-200
-                ${active 
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground" 
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                ${
+                  active
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                 }
               `}
             >
@@ -189,16 +192,14 @@ function NavigationMenu() {
               {active && (
                 <div className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-violet-500" />
               )}
-              
-              <Icon 
+
+              <Icon
                 className={`h-4 w-4 shrink-0 transition-colors ${
                   active ? "text-violet-400" : "group-hover:text-violet-400"
-                }`} 
+                }`}
               />
-              
-              {!isCollapsed && (
-                <span className="truncate">{item.title}</span>
-              )}
+
+              {!isCollapsed && <span className="truncate">{item.title}</span>}
             </SidebarMenuButton>
           </SidebarMenuItem>
         );
@@ -208,11 +209,70 @@ function NavigationMenu() {
 }
 
 export default function AppSidebar() {
+  const navigate = useNavigate();
+
+  // Get Pro status
+  const isPro = useAuthStore((state) => state.isPro);
+
+  // Get session info
+  const sessionId = useAgentStore((state) => state.sessionId);
+  const isAnalyzing = useAgentStore((state) => state.isAnalyzing);
+
+  // Fix store actions
+  const setCustomPrompt = useFixStore((state) => state.setCustomPrompt);
+
+  // Handle custom prompt submission
+  const handleCustomPromptSubmit = useCallback(
+    async (promptText) => {
+      // Store the prompt
+      setCustomPrompt(promptText);
+
+      // If there's an active session, trigger the custom agent immediately
+      if (sessionId && !isAnalyzing) {
+        try {
+          // Get auth token
+          const getToken = window.__agentlens_getToken;
+          if (!getToken) {
+            console.warn("[AppSidebar] No getToken function available");
+            return;
+          }
+
+          const token = await getToken();
+
+          // POST to custom agent endpoint
+          const response = await fetch("/api/fix/custom", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              sessionId,
+              customPrompt: promptText,
+            }),
+          });
+
+          if (!response.ok) {
+            console.error(
+              "[AppSidebar] Custom agent request failed:",
+              response.status,
+            );
+          }
+        } catch (error) {
+          console.error("[AppSidebar] Error triggering custom agent:", error);
+        }
+      } else {
+        // No active session - prompt will be used in next analysis
+        console.log(
+          "[AppSidebar] Custom prompt stored, will run with next analysis",
+        );
+      }
+    },
+    [sessionId, isAnalyzing, setCustomPrompt],
+  );
+
   return (
-    <Sidebar 
-      collapsible="icon"
-      className="border-r border-sidebar-border"
-    >
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       {/* Header with Logo */}
       <SidebarHeader className="border-b border-sidebar-border/50 px-2 py-4">
         <AgentLensLogo />
@@ -228,15 +288,35 @@ export default function AppSidebar() {
             <NavigationMenu />
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* ============================================
+            CUSTOM AGENT PANEL - ADD THIS SECTION
+            Only show for Pro users, but render with isPro prop
+            so free users see the teaser/disabled state
+            ============================================ */}
+        <SidebarGroup className="mt-4">
+          <SidebarGroupLabel className="px-2 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/40">
+            Pro Tools
+          </SidebarGroupLabel>
+          <SidebarGroupContent className="px-1">
+            <CustomAgentPanel
+              onSubmitPrompt={handleCustomPromptSubmit}
+              isPro={isPro}
+            />
+          </SidebarGroupContent>
+        </SidebarGroup>
+        {/* ============================================
+            END CUSTOM AGENT PANEL
+            ============================================ */}
       </SidebarContent>
 
       {/* Footer with Usage & Profile */}
       <SidebarFooter className="mt-auto">
         {/* Usage Indicator */}
         <UsageIndicator />
-        
+
         <Separator className="bg-sidebar-border/50" />
-        
+
         {/* User Profile Dropdown */}
         <div className="p-2">
           <UserProfileDropdown />

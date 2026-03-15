@@ -1,4 +1,4 @@
-import { create } from 'zustand'
+import { create } from "zustand";
 
 const initialState = {
   // File editor state
@@ -12,20 +12,25 @@ const initialState = {
   fixProgress: {
     current: 0,
     total: 0,
-    percentage: 0
+    percentage: 0,
   },
   fixedBugIds: new Set(),
   failedBugIds: new Set(),
   fixHistory: [],
 
   // Streaming state
-  streamingContent: '',
+  streamingContent: "",
   isStreaming: false,
 
   // Diff view state
   showDiff: false,
-  diffData: null
-}
+  diffData: null,
+
+  customPrompt: "", // User's custom instruction
+  customAgentEdits: [], // Edits as they stream in from custom agent
+  customAgentStatus: "idle", // 'idle' | 'running' | 'complete' | 'error'
+  customAgentError: null, // Error message if failed
+};
 
 const useFixStore = create((set, get) => ({
   ...initialState,
@@ -38,50 +43,51 @@ const useFixStore = create((set, get) => ({
         [path]: {
           original: content,
           current: content,
-          language: language || 'plaintext'
-        }
+          language: language || "plaintext",
+        },
       },
-      activeFilePath: path
-    }))
+      activeFilePath: path,
+    }));
   },
 
   closeFile: (path) => {
     set((state) => {
-      const newOpenFiles = { ...state.openFiles }
-      delete newOpenFiles[path]
+      const newOpenFiles = { ...state.openFiles };
+      delete newOpenFiles[path];
 
-      const newUnsavedFiles = new Set(state.unsavedFiles)
-      newUnsavedFiles.delete(path)
+      const newUnsavedFiles = new Set(state.unsavedFiles);
+      newUnsavedFiles.delete(path);
 
       // If closing active file, switch to another open file
-      let newActiveFilePath = state.activeFilePath
+      let newActiveFilePath = state.activeFilePath;
       if (state.activeFilePath === path) {
-        const remainingPaths = Object.keys(newOpenFiles)
-        newActiveFilePath = remainingPaths.length > 0 ? remainingPaths[0] : null
+        const remainingPaths = Object.keys(newOpenFiles);
+        newActiveFilePath =
+          remainingPaths.length > 0 ? remainingPaths[0] : null;
       }
 
       return {
         openFiles: newOpenFiles,
         unsavedFiles: newUnsavedFiles,
-        activeFilePath: newActiveFilePath
-      }
-    })
+        activeFilePath: newActiveFilePath,
+      };
+    });
   },
 
   setActiveFile: (path) => {
-    set({ activeFilePath: path })
+    set({ activeFilePath: path });
   },
 
   updateFileContent: (path, content) => {
     set((state) => {
-      const file = state.openFiles[path]
-      if (!file) return state
+      const file = state.openFiles[path];
+      if (!file) return state;
 
-      const newUnsavedFiles = new Set(state.unsavedFiles)
+      const newUnsavedFiles = new Set(state.unsavedFiles);
       if (content !== file.original) {
-        newUnsavedFiles.add(path)
+        newUnsavedFiles.add(path);
       } else {
-        newUnsavedFiles.delete(path)
+        newUnsavedFiles.delete(path);
       }
 
       return {
@@ -89,54 +95,54 @@ const useFixStore = create((set, get) => ({
           ...state.openFiles,
           [path]: {
             ...file,
-            current: content
-          }
+            current: content,
+          },
         },
-        unsavedFiles: newUnsavedFiles
-      }
-    })
+        unsavedFiles: newUnsavedFiles,
+      };
+    });
   },
 
   saveFile: (path) => {
     set((state) => {
-      const file = state.openFiles[path]
-      if (!file) return state
+      const file = state.openFiles[path];
+      if (!file) return state;
 
-      const newUnsavedFiles = new Set(state.unsavedFiles)
-      newUnsavedFiles.delete(path)
+      const newUnsavedFiles = new Set(state.unsavedFiles);
+      newUnsavedFiles.delete(path);
 
       return {
         openFiles: {
           ...state.openFiles,
           [path]: {
             ...file,
-            original: file.current
-          }
+            original: file.current,
+          },
         },
-        unsavedFiles: newUnsavedFiles
-      }
-    })
+        unsavedFiles: newUnsavedFiles,
+      };
+    });
   },
 
   resetFile: (path) => {
     set((state) => {
-      const file = state.openFiles[path]
-      if (!file) return state
+      const file = state.openFiles[path];
+      if (!file) return state;
 
-      const newUnsavedFiles = new Set(state.unsavedFiles)
-      newUnsavedFiles.delete(path)
+      const newUnsavedFiles = new Set(state.unsavedFiles);
+      newUnsavedFiles.delete(path);
 
       return {
         openFiles: {
           ...state.openFiles,
           [path]: {
             ...file,
-            current: file.original
-          }
+            current: file.original,
+          },
         },
-        unsavedFiles: newUnsavedFiles
-      }
-    })
+        unsavedFiles: newUnsavedFiles,
+      };
+    });
   },
 
   // Fix agent
@@ -147,11 +153,11 @@ const useFixStore = create((set, get) => ({
       fixProgress: {
         current: 0,
         total: totalBugs,
-        percentage: 0
+        percentage: 0,
       },
       fixedBugIds: new Set(),
-      failedBugIds: new Set()
-    })
+      failedBugIds: new Set(),
+    });
   },
 
   setCurrentFix: (bugId, current) => {
@@ -160,52 +166,53 @@ const useFixStore = create((set, get) => ({
       fixProgress: {
         ...state.fixProgress,
         current,
-        percentage: state.fixProgress.total > 0 
-          ? Math.round((current / state.fixProgress.total) * 100) 
-          : 0
-      }
-    }))
+        percentage:
+          state.fixProgress.total > 0
+            ? Math.round((current / state.fixProgress.total) * 100)
+            : 0,
+      },
+    }));
   },
 
   markBugFixed: (bugId) => {
     set((state) => {
-      const newFixedBugIds = new Set(state.fixedBugIds)
-      newFixedBugIds.add(bugId)
-      return { fixedBugIds: newFixedBugIds }
-    })
+      const newFixedBugIds = new Set(state.fixedBugIds);
+      newFixedBugIds.add(bugId);
+      return { fixedBugIds: newFixedBugIds };
+    });
   },
 
   markBugFailed: (bugId) => {
     set((state) => {
-      const newFailedBugIds = new Set(state.failedBugIds)
-      newFailedBugIds.add(bugId)
-      return { failedBugIds: newFailedBugIds }
-    })
+      const newFailedBugIds = new Set(state.failedBugIds);
+      newFailedBugIds.add(bugId);
+      return { failedBugIds: newFailedBugIds };
+    });
   },
 
   stopFixing: () => {
     set({
       isFixing: false,
-      currentFixBugId: null
-    })
+      currentFixBugId: null,
+    });
   },
 
   // Streaming
   startStream: () => {
     set({
-      streamingContent: '',
-      isStreaming: true
-    })
+      streamingContent: "",
+      isStreaming: true,
+    });
   },
 
   appendStream: (char) => {
     set((state) => ({
-      streamingContent: state.streamingContent + char
-    }))
+      streamingContent: state.streamingContent + char,
+    }));
   },
 
   endStream: () => {
-    set({ isStreaming: false })
+    set({ isStreaming: false });
   },
 
   // Fix history (undo)
@@ -215,61 +222,151 @@ const useFixStore = create((set, get) => ({
         ...state.fixHistory,
         {
           ...entry,
-          timestamp: Date.now()
-        }
-      ]
-    }))
+          timestamp: Date.now(),
+        },
+      ],
+    }));
   },
 
   undoFix: (bugId) => {
-    const state = get()
-    const historyEntry = state.fixHistory.find((entry) => entry.bugId === bugId)
+    const state = get();
+    const historyEntry = state.fixHistory.find(
+      (entry) => entry.bugId === bugId,
+    );
 
     if (!historyEntry) {
-      console.warn(`No fix history found for bugId: ${bugId}`)
-      return
+      console.warn(`No fix history found for bugId: ${bugId}`);
+      return;
     }
 
     // Restore the original content
-    get().updateFileContent(historyEntry.filePath, historyEntry.before)
+    get().updateFileContent(historyEntry.filePath, historyEntry.before);
 
     // Remove from fixed bugs
-    const newFixedBugIds = new Set(state.fixedBugIds)
-    newFixedBugIds.delete(bugId)
+    const newFixedBugIds = new Set(state.fixedBugIds);
+    newFixedBugIds.delete(bugId);
 
     // Remove from history
-    const newFixHistory = state.fixHistory.filter((entry) => entry.bugId !== bugId)
+    const newFixHistory = state.fixHistory.filter(
+      (entry) => entry.bugId !== bugId,
+    );
 
     set({
       fixedBugIds: newFixedBugIds,
-      fixHistory: newFixHistory
-    })
+      fixHistory: newFixHistory,
+    });
   },
 
   // Diff view
   showDiffView: (data) => {
     set({
       showDiff: true,
-      diffData: data
-    })
+      diffData: data,
+    });
   },
 
   hideDiffView: () => {
     set({
       showDiff: false,
-      diffData: null
-    })
+      diffData: null,
+    });
   },
 
-  // Reset all
+  /**
+   * Set the custom prompt for the custom agent
+   * @param {string} prompt
+   */
+  setCustomPrompt: (prompt) => {
+    set({ customPrompt: prompt || "" });
+  },
+
+  /**
+   * Clear the custom prompt
+   */
+  clearCustomPrompt: () => {
+    set({ customPrompt: "" });
+  },
+
+  /**
+   * Add a single edit from the custom agent stream
+   * @param {Object} edit - Edit object { file, lineStart, lineEnd, newContent, editType, explanation }
+   */
+  addCustomEdit: (edit) => {
+    set((state) => ({
+      customAgentEdits: [
+        ...state.customAgentEdits,
+        {
+          ...edit,
+          id: Date.now() + Math.random(),
+          receivedAt: Date.now(),
+        },
+      ],
+    }));
+  },
+
+  /**
+   * Add multiple edits at once
+   * @param {Array} edits
+   */
+  addCustomEdits: (edits) => {
+    set((state) => ({
+      customAgentEdits: [
+        ...state.customAgentEdits,
+        ...edits.map((edit, index) => ({
+          ...edit,
+          id: Date.now() + index + Math.random(),
+          receivedAt: Date.now(),
+        })),
+      ],
+    }));
+  },
+
+  /**
+   * Clear all custom agent edits
+   */
+  clearCustomEdits: () => {
+    set({
+      customAgentEdits: [],
+      customAgentError: null,
+    });
+  },
+
+  /**
+   * Set custom agent status
+   * @param {string} status - 'idle' | 'running' | 'complete' | 'error'
+   * @param {string} error - Optional error message
+   */
+  setCustomAgentStatus: (status, error = null) => {
+    set({
+      customAgentStatus: status,
+      customAgentError: error,
+    });
+  },
+
+  /**
+   * Get summary of custom agent edits
+   * @returns {{ editsCount: number, filesModified: string[] }}
+   */
+  getCustomEditsSummary: () => {
+    const edits = get().customAgentEdits;
+    const filesModified = [...new Set(edits.map((e) => e.file))];
+    return {
+      editsCount: edits.length,
+      filesModified,
+    };
+  },
+
+  // ============================================
+  // MODIFY: Reset to include custom agent state
+  // ============================================
   resetFixStore: () => {
     set({
       ...initialState,
       unsavedFiles: new Set(),
       fixedBugIds: new Set(),
-      failedBugIds: new Set()
-    })
-  }
-}))
+      failedBugIds: new Set(),
+    });
+  },
+}));
 
-export default useFixStore
+export default useFixStore;
