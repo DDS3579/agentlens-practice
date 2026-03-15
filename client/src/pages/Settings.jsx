@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react'
 import { UserProfile } from '@clerk/clerk-react'
 import { motion } from 'framer-motion'
@@ -16,6 +15,7 @@ import {
   AlertTriangle, ExternalLink, Lock
 } from 'lucide-react'
 import { FadeIn } from '../components/ui/AnimatedPage.jsx'
+import ProviderSelector from '../components/settings/ProviderSelector.jsx'
 
 export default function Settings() {
   const { user, getToken, isProUser } = useAuth()
@@ -231,6 +231,20 @@ export default function Settings() {
             <Badge variant="outline" className={isProUser ? 'border-violet-500 text-violet-400' : 'border-gray-500 text-gray-400'}>
               {isProUser ? 'Pro Plan' : 'Free Plan'}
             </Badge>
+          </div>
+
+
+          {/* Provider Selector */}
+          <ProviderSelector />
+
+
+          {/* Model Configuration */}
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <Cpu className="w-5 h-5 text-violet-400" />
+              Model Configuration
+            </h2>
+            <ProviderSelector />
           </div>
 
           {/* Tabs */}
