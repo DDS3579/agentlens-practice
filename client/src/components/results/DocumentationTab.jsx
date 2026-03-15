@@ -4,6 +4,8 @@ import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import useAgentStore from "../../store/agentStore.js";
+import DocFileTree from "./DocFileTree.jsx";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const DocumentationTab = () => {
   const { writerResult, repoInfo, securitySummary } = useAgentStore();

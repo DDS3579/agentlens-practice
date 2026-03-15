@@ -1,147 +1,146 @@
 import { callLLM, callLLMWithUserConfig } from '../llm/llmService.js';
 import {
   WRITER_SYSTEM_PROMPT,
-  buildDocumentationPrompt,
-  buildRefinementPrompt
 } from '../prompts/technicalWriterPrompt.js';
+import { buildDocumentationPrompt } from '../prompts/documentationPrompt.js';
 
 /**
- * Main technical writer function
- * Generates documentation incorporating security findings from previous agent
+ * Run the Technical Writer Agent
+ *
+ * @param {Object} memory - Shared memory object from pipeline
+ * @param {Object|null} fileTreeData - Repository file tree structure (optional)
+ * @returns {Promise<void>}
  */
-export async function runTechnicalWriter(memory) {
+export async function runTechnicalWriter(memory, fileTreeData = null) {
+  const agentName = 'writer';
+
   try {
-    // STEP 1 — Initialize
-    memory.setAgentStatus('writer', 'thinking', 'Reading security findings...');
+    memory.setAgentStatus(agentName, 'thinking', 'Starting documentation generation...');
 
-    const files = memory.get('files');
-    const plan = memory.get('plan');
+    // Get context from memory
+    const files = memory.get('files') || [];
+    const repoSummary = memory.get('repoSummary') || {};
     const bugs = memory.get('bugs') || [];
-    const repoSummary = memory.get('repoSummary');
+    const userLLMConfig = memory.get('userLLMConfig');
 
-    console.log(`📝 Technical Writer Agent starting`);
-    console.log(`   Files to document: ${files.length}`);
-    console.log(`   Known bugs to incorporate: ${bugs.length}`);
+    // Build code context string from files
+    const codeContext = buildCodeContext(files, repoSummary, bugs);
 
-    // STEP 2 — Send opening inter-agent message acknowledging security findings
-    const criticalCount = bugs.filter(b => b.severity === 'critical').length;
-    const highCount = bugs.filter(b => b.severity === 'high').length;
-
-    memory.addMessage(
-      'security',
-      'writer',
-      `Acknowledged. Incorporating ${bugs.length} security findings into documentation. 
-       Will highlight ${criticalCount} critical and ${highCount} high severity issues in Known Issues section.`,
-      'acknowledgment'
-    );
-
-    // STEP 3 — Prepare files for documentation
-    const filesForDoc = files.map(file => ({
-      ...file,
-      content: file.content && file.content.length > 6000
-        ? file.content.substring(0, 6000) + '\n\n[... truncated ...]'
-        : file.content || ''
-    }));
-
-    // STEP 4 — Update status and call LLM
-    memory.setAgentStatus('writer', 'acting', 'Generating documentation...');
-
-    const userMessage = buildDocumentationPrompt(filesForDoc, bugs, plan);
+    // ============================================
+    // MODIFIED: Pass fileTreeData to prompt builder
+    // ============================================
+    const prompt = buildDocumentationPrompt(codeContext, fileTreeData);
 
     const messages = [
       { role: 'system', content: WRITER_SYSTEM_PROMPT },
-      { role: 'user', content: userMessage }
+      { role: 'user', content: prompt }
     ];
 
-    console.log('📝 Calling LLM for documentation generation...');
+    memory.setAgentStatus(agentName, 'acting', 'Generating documentation content...');
 
-    const userLLMConfig = memory.get('userLLMConfig');
+    const response = await callLLMWithUserConfig(messages, {
+      agentRole: agentName,
+      jsonMode: true,
+      temperature: 0.4,
+      maxTokens: 4096
+    }, userLLMConfig);
 
-    try {
-      const response = await callLLMWithUserConfig(messages, {
-        agentRole: 'writer',
-        jsonMode: true,
-        temperature: 0.4,
-        maxTokens: 4096
-      }, userLLMConfig);
-
-      // Parse result
-      let result;
-      if (typeof response.content === 'object') {
-        result = response.content;
-      } else {
-        result = JSON.parse(response.content);
-      }
-
-      // Extract the documentation markdown string
-      const documentation = result.documentation || result;
-
-      // If result is a plain string (LLM ignored JSON mode), use it directly
-      const docString = typeof documentation === 'string'
-        ? documentation
-        : JSON.stringify(documentation);
-
-      // Store documentation in shared memory
-      memory.setDocumentation(docString);
-
-      // Store metadata separately
-      memory.set('documentationMeta', {
-        sections: result.sections || [],
-        wordCount: result.wordCount || 0,
-        coverageScore: result.coverageScore || 0
-      });
-
-      console.log(`📝 Documentation generated — ${result.wordCount || 'unknown'} words`);
-      console.log(`   Sections: ${(result.sections || []).join(', ')}`);
-
-    } catch (llmError) {
-      console.error('📝 LLM call failed:', llmError.message);
-
-      // Generate fallback documentation manually
-      const fallbackDoc = generateFallbackDocumentation(repoSummary, files, bugs);
-      memory.setDocumentation(fallbackDoc);
-      console.log('📝 Used fallback documentation generator');
+    // Parse result
+    let result;
+    if (typeof response.content === 'object') {
+      result = response.content;
+    } else {
+      result = JSON.parse(response.content);
     }
 
-    // STEP 5 — Send handoff message to architecture agent
-    const documentation = memory.get('documentation');
-    const docPreview = documentation.substring(0, 150).replace(/\n/g, ' ');
+    // Extract the documentation markdown string
+    const documentation = result.documentation || result;
+
+    // If result is a plain string, use it directly
+    const docString = typeof documentation === 'string'
+      ? documentation
+      : JSON.stringify(documentation);
+
+    // Store documentation in shared memory
+    memory.setDocumentation(docString);
+
+    // Store metadata separately
+    memory.set('documentationMeta', {
+      sections: result.sections || [],
+      wordCount: result.wordCount || 0,
+      coverageScore: result.coverageScore || 0
+    });
+
+    // Send handoff message to architecture agent
+    const docPreview = docString.substring(0, 150).replace(/\n/g, ' ');
 
     memory.addMessage(
-      'writer',
+      agentName,
       'architecture',
-      `Documentation complete (${documentation.length} chars). 
-       Documented ${files.length} files with ${bugs.length} known issues noted. 
+      `Documentation complete (${docString.length} chars).
        Preview: "${docPreview}..."
        Please review architectural patterns and suggest improvements.`,
       'handoff'
     );
 
-    // STEP 6 — Mark complete
-    memory.setAgentStatus('writer', 'complete', `Documentation generated`);
-    console.log('📝 Technical Writer Agent complete');
+    memory.setAgentStatus(agentName, 'complete', 'Documentation generation complete');
 
-    // STEP 7 — Return
     return {
-      documentation: memory.get('documentation'),
+      documentation: docString,
       meta: memory.get('documentationMeta')
     };
 
   } catch (error) {
-    memory.setAgentStatus('writer', 'error', error.message);
-    console.error('Technical Writer Agent failed:', error);
+    console.error(`[${agentName}] Error:`, error.message);
+    memory.setAgentStatus(agentName, 'error', error.message);
 
-    // Instead of rethrowing — generate fallback and continue
+    // Fallback logic
     const fallback = generateFallbackDocumentation(
       memory.get('repoSummary'),
       memory.get('files'),
       memory.get('bugs') || []
     );
     memory.setDocumentation(fallback);
-    memory.setAgentStatus('writer', 'complete', 'Documentation generated (fallback)');
+    memory.setAgentStatus(agentName, 'complete', 'Documentation generated (fallback)');
 
     return { documentation: fallback, meta: {} };
   }
+}
+
+/**
+ * Build code context string from files and analysis data
+ * @param {Array} files - Array of file objects
+ * @param {Object} repoSummary - Repository summary
+ * @param {Array} bugs - Array of detected bugs
+ * @returns {string} Formatted code context
+ */
+function buildCodeContext(files, repoSummary, bugs) {
+  let context = '';
+
+  // Add repo info
+  if (repoSummary) {
+    context += `Repository: ${repoSummary.owner}/${repoSummary.repo}\n`;
+    context += `Branch: ${repoSummary.branch || 'main'}\n\n`;
+  }
+
+  // Add key files content
+  const keyFiles = files.slice(0, 20); // Limit to avoid token overflow
+  keyFiles.forEach(file => {
+    context += `### File: ${file.path}\n`;
+    context += '```' + (file.language || '') + '\n';
+    context += file.content?.substring(0, 3000) || '// Content not available';
+    context += '\n```\n\n';
+  });
+
+  // Add security findings summary
+  if (bugs && bugs.length > 0) {
+    context += '\n### Security Findings\n';
+    bugs.forEach((bug, i) => {
+      context += `${i + 1}. [${bug.severity}] ${bug.type}: ${bug.message} (${bug.file}:${bug.line})\n`;
+    });
+  }
+
+  return context;
 }
 
 /**

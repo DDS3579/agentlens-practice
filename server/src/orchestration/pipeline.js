@@ -43,9 +43,26 @@ export async function runAnalysisPipeline(files, repoSummary, onSession, userLLM
     console.log('\n--- PHASE 2: Security Analysis ---');
     await runSecurityAnalysis(memory);
 
-    // Phase 3: Technical Writer
+    // Phase 3: Technical Writer (Modified)
     console.log('\n--- PHASE 3: Technical Writing ---');
-    await runTechnicalWriter(memory);
+    
+    // Build file tree data structure for the technical writer
+    // NOTE: repoSummary should contain the tree from repoParser
+    // If tree is stored separately, check: memory.get('repoTree') or repoSummary.tree
+    const fileTreeData = {
+      name: repoSummary?.repo || repoSummary?.name || 'project',
+      tree: repoSummary?.tree || repoSummary?.fileTree || [],
+      totalFiles: repoSummary?.totalFiles || files.length,
+      totalSize: repoSummary?.totalSize || files.reduce((sum, f) => sum + (f.size || 0), 0),
+      languages: repoSummary?.languages || detectLanguages(files),
+    };
+    
+    // Store file tree in memory for SSE emission
+    memory.set('fileTree', fileTreeData);
+    
+    // Pass file tree to technical writer agent
+    await runTechnicalWriter(memory, fileTreeData);
+    // ============================================
 
     // Phase 4: Architecture Review
     console.log('\n--- PHASE 4: Architecture Review ---');
@@ -67,6 +84,7 @@ export async function runAnalysisPipeline(files, repoSummary, onSession, userLLM
   const results = {
     sessionId,
     repoSummary,
+    fileTree: store.fileTree || null,
     plan: store.plan,
     security: {
       bugs: store.bugs || [],
@@ -107,6 +125,42 @@ export async function runAnalysisPipeline(files, repoSummary, onSession, userLLM
 
   return results;
 }
+
+/**
+ * Detect programming languages from file extensions
+ * @param {Array} files - Array of file objects
+ * @returns {Array<string>} Detected languages
+ */
+function detectLanguages(files) {
+  const extToLang = {
+    '.js': 'JavaScript',
+    '.jsx': 'JavaScript',
+    '.ts': 'TypeScript',
+    '.tsx': 'TypeScript',
+    '.py': 'Python',
+    '.java': 'Java',
+    '.go': 'Go',
+    '.rs': 'Rust',
+    '.rb': 'Ruby',
+    '.php': 'PHP',
+    '.css': 'CSS',
+    '.scss': 'SCSS',
+    '.html': 'HTML',
+    '.vue': 'Vue',
+    '.svelte': 'Svelte',
+  };
+
+  const languages = new Set();
+  files.forEach(file => {
+    const ext = '.' + (file.path?.split('.').pop() || '');
+    if (extToLang[ext]) {
+      languages.add(extToLang[ext]);
+    }
+  });
+
+  return Array.from(languages);
+}
+
 
 /**
  * Get current pipeline status for a session
