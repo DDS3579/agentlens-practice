@@ -9,7 +9,7 @@ import useAuthStore from '../../store/authStore.js'
 import useAgentStore from '../../store/agentStore.js'
 import { Zap, Play, Square, RotateCcw, Lock, Check, X, Circle, AlertTriangle, FileCode } from 'lucide-react'
 
-function FixAgent({ onUpgradeClick }) {
+function FixAgent({ onUpgradeClick, onFixSingle, onFixAll, onCancel }) {
   const [selectedBugIds, setSelectedBugIds] = useState(new Set())
 
   // Auth store
@@ -43,12 +43,10 @@ function FixAgent({ onUpgradeClick }) {
 
     startFixing(bugs.length)
 
-    // TODO: Implement actual fix API call in Step 9
-    // For now, show a placeholder behavior
-    console.log('[FixAgent] Fix All clicked - API integration coming in Step 9')
-
-    // Simulated progress for demo
-    // This will be replaced with actual SSE streaming in Step 9
+    // Call the wired-in fix handler from Dashboard
+    if (onFixAll) {
+      onFixAll(bugs)
+    }
   }
 
   const handleFixSelected = async () => {
@@ -59,8 +57,12 @@ function FixAgent({ onUpgradeClick }) {
 
     if (selectedBugIds.size === 0) return
 
+    const selectedBugs = bugs.filter(b => selectedBugIds.has(b.id || `bug-${bugs.indexOf(b)}`))
     startFixing(selectedBugIds.size)
-    console.log('[FixAgent] Fix Selected clicked - API integration coming in Step 9')
+
+    if (onFixAll) {
+      onFixAll(selectedBugs)
+    }
   }
 
   const handleFixSingle = async (bugId) => {
@@ -69,12 +71,19 @@ function FixAgent({ onUpgradeClick }) {
       return
     }
 
+    const bug = bugs.find(b => (b.id || `bug-${bugs.indexOf(b)}`) === bugId) || { id: bugId }
     startFixing(1)
-    console.log(`[FixAgent] Fix single bug ${bugId} - API integration coming in Step 9`)
+
+    if (onFixSingle) {
+      onFixSingle(bug)
+    }
   }
 
   const handleStop = () => {
     stopFixing()
+    if (onCancel) {
+      onCancel()
+    }
   }
 
   const toggleBugSelection = (bugId) => {

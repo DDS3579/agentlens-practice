@@ -1,99 +1,118 @@
-import { useState, useCallback } from "react";
-import useAuth from "./useAuth.js";
 
-function useAnalysisHistory() {
-  const [analyses, setAnalyses] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+import { useState, useCallback, useRef, useMemo } from 'react'
+import useAuth from './useAuth.js'
 
-  const { getToken } = useAuth();
+const CACHE_TTL = 60000 // 60 seconds
 
-  const clearError = useCallback(() => {
-    setError(null);
-  }, []);
+export function useAnalysisHistory() {
+  const [analyses, setAnalyses] = useState([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const { getToken } = useAuth()
+  const cacheRef = useRef({ data: null, timestamp: null })
 
   const fetchHistory = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const token = await getToken();
-
-      if (!token) {
-        throw new Error("Authentication required");
-      }
-
-      const response = await fetch("/api/history", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error("Please sign in to view your history");
-        }
-        if (response.status === 403) {
-          throw new Error("You do not have permission to view this history");
-        }
-        throw new Error("Failed to load analysis history");
-      }
-
-      const data = await response.json();
-      setAnalyses(data.analyses || []);
-    } catch (err) {
-      console.error("Error fetching history:", err);
-      setError(err.message || "An unexpected error occurred");
-    } finally {
-      setIsLoading(false);
+    // Check cache
+    const now = Date.now()
+    if (cacheRef.current.data && (now - cacheRef.current.timestamp) < CACHE_TTL) {
+      setAnalyses(cacheRef.current.data)
+      return
     }
-  }, [getToken]);
 
-  const deleteAnalysis = useCallback(
-    async (id) => {
-      try {
-        setError(null);
+    setIsLoading(true)
+    setError(null)
 
-        const token = await getToken();
+    try {
+      const token = await getToken()
+      const res = await fetch('/api/history', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
 
-        if (!token) {
-          throw new Error("Authentication required");
-        }
-
-        const response = await fetch(`/api/history/${id}`, {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            throw new Error("Please sign in to delete analyses");
-          }
-          if (response.status === 403) {
-            throw new Error(
-              "You do not have permission to delete this analysis",
-            );
-          }
-          if (response.status === 404) {
-            throw new Error("Analysis not found");
-          }
-          throw new Error("Failed to delete analysis");
-        }
-
-        // Remove from local state
-        setAnalyses((prev) => prev.filter((analysis) => analysis.id !== id));
-
-        return true;
-      } catch (err) {
-        console.error("Error deleting analysis:", err);
-        setError(err.message || "Failed to delete analysis");
-        return false;
+      if (!res.ok) {
+        throw new Error('Failed to fetch history')
       }
-    },
-    [getToken],
-  );
+
+      const data = await res.json()
+      const analysesData = data.analyses || []
+      
+      setAnalyses(analysesData)
+      cacheRef.current = { data: analysesData, timestamp: Date.now() }
+    } catch (err) {
+      setError(err.message || 'Failed to load history')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [getToken])
+
+  const refreshHistory = useCallback(async () => {
+    // Bypass cache
+    cacheRef.current = { data: null, timestamp: null }
+    
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const token = await getToken()
+      const res = await fetch('/api/history', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
+      if (!res.ok) {
+        throw new Error('Failed to fetch history')
+      }
+
+      const data = await res.json()
+      const analysesData = data.analyses || []
+      
+      setAnalyses(analysesData)
+      cacheRef.current = { data: analysesData, timestamp: Date.now() }
+    } catch (err) {
+      setError(err.message || 'Failed to load history')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [getToken])
+
+  const deleteAnalysis = useCallback(async (id) => {
+    try {
+      const token = await getToken()
+      const res = await fetch(`/api/history/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
+      if (!res.ok) {
+        throw new Error('Failed to delete analysis')
+      }
+
+      // Update local state
+      setAnalyses(prev => {
+        const updated = prev.filter(a => a.id !== id)
+        // Update cache
+        cacheRef.current = { data: updated, timestamp: Date.now() }
+        return updated
+      })
+    } catch (err) {
+      setError(err.message || 'Failed to delete analysis')
+    }
+  }, [getToken])
+
+  const clearError = useCallback(() => {
+    setError(null)
+  }, [])
+
+  // Computed values
+  const totalBugsFound = useMemo(() => {
+    return analyses.reduce((sum, a) => sum + (a.bug_count || 0), 0)
+  }, [analyses])
+
+  const totalAnalyses = analyses.length
+
+  const avgDuration = useMemo(() => {
+    if (analyses.length === 0) return 0
+    const total = analyses.reduce((sum, a) => sum + (a.duration_ms || 0), 0)
+    return Math.round(total / analyses.length)
+  }, [analyses])
 
   return {
     analyses,
@@ -101,8 +120,10 @@ function useAnalysisHistory() {
     error,
     fetchHistory,
     deleteAnalysis,
+    refreshHistory,
     clearError,
-  };
+    totalBugsFound,
+    totalAnalyses,
+    avgDuration
+  }
 }
-
-export default useAnalysisHistory;

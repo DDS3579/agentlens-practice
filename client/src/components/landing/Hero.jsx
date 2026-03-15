@@ -1,4 +1,5 @@
-import { motion } from 'framer-motion'
+import { useEffect, useRef, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@clerk/clerk-react'
 import { Button } from '@/components/ui/button'
@@ -6,14 +7,175 @@ import { Badge } from '@/components/ui/badge'
 import { ArrowRight, Github, Zap, Shield, FileText, GitBranch, Cpu } from 'lucide-react'
 
 const agents = [
-  { name: 'Coordinator Agent', status: 'Planning', color: 'bg-purple-500', icon: Cpu },
-  { name: 'Security Agent', status: 'Scanning', color: 'bg-red-500', icon: Shield },
-  { name: 'Writer Agent', status: 'Writing', color: 'bg-blue-500', icon: FileText },
-  { name: 'Architecture Agent', status: 'Reviewing', color: 'bg-green-500', icon: GitBranch },
+  { name: 'Coordinator Agent', color: 'bg-purple-500', icon: Cpu },
+  { name: 'Security Agent', color: 'bg-red-500', icon: Shield },
+  { name: 'Writer Agent', color: 'bg-blue-500', icon: FileText },
+  { name: 'Architecture Agent', color: 'bg-green-500', icon: GitBranch },
 ]
+
+const taglines = [
+  "4 specialized AI agents collaborate in real time.",
+  "Find security vulnerabilities with exact line numbers.",
+  "Generate documentation automatically.",
+  "Get architecture fixes that address root causes.",
+]
+
+// Static array of 12 particle configs generated once
+const particles = Array.from({ length: 12 }, (_, i) => ({
+  id: i,
+  x: Math.random() * 100,
+  y: Math.random() * 100,
+  size: Math.random() * 3 + 1,
+  duration: Math.random() * 4 + 4,
+  delay: Math.random() * 2,
+}))
 
 function Hero() {
   const { isSignedIn } = useAuth()
+  const canvasRef = useRef(null)
+  const [currentTagline, setCurrentTagline] = useState(0)
+  const [agentStates, setAgentStates] = useState([
+    { status: 'Waiting...', color: 'text-gray-400', borderColor: 'border-gray-500/30' },
+    { status: 'Waiting...', color: 'text-gray-400', borderColor: 'border-gray-500/30' },
+    { status: 'Waiting...', color: 'text-gray-400', borderColor: 'border-gray-500/30' },
+    { status: 'Waiting...', color: 'text-gray-400', borderColor: 'border-gray-500/30' },
+  ])
+
+  // Canvas gradient mesh background
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    let animFrame
+    let time = 0
+
+    const resize = () => {
+      canvas.width = window.innerWidth
+      canvas.height = window.innerHeight
+    }
+    resize()
+    window.addEventListener('resize', resize)
+
+    const animate = () => {
+      time += 0.003
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+      // Draw 4 slow-moving gradient orbs
+      const orbs = [
+        { x: Math.sin(time * 0.7) * 0.3 + 0.3, y: Math.cos(time * 0.5) * 0.3 + 0.2, color: 'rgba(139,92,246,0.12)', r: 0.4 },
+        { x: Math.cos(time * 0.4) * 0.3 + 0.7, y: Math.sin(time * 0.6) * 0.3 + 0.7, color: 'rgba(109,40,217,0.10)', r: 0.35 },
+        { x: Math.sin(time * 0.5) * 0.2 + 0.5, y: Math.cos(time * 0.8) * 0.2 + 0.4, color: 'rgba(167,139,250,0.08)', r: 0.3 },
+        { x: Math.cos(time * 0.3) * 0.4 + 0.2, y: Math.sin(time * 0.4) * 0.3 + 0.8, color: 'rgba(79,70,229,0.09)', r: 0.45 },
+      ]
+
+      orbs.forEach(orb => {
+        const x = orb.x * canvas.width
+        const y = orb.y * canvas.height
+        const r = orb.r * Math.max(canvas.width, canvas.height)
+        const grad = ctx.createRadialGradient(x, y, 0, x, y, r)
+        grad.addColorStop(0, orb.color)
+        grad.addColorStop(1, 'transparent')
+        ctx.fillStyle = grad
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+      })
+
+      animFrame = requestAnimationFrame(animate)
+    }
+    animate()
+
+    return () => {
+      cancelAnimationFrame(animFrame)
+      window.removeEventListener('resize', resize)
+    }
+  }, [])
+
+  // Typewriter effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTagline((prev) => (prev + 1) % taglines.length)
+    }, 3500)
+    return () => clearInterval(interval)
+  }, [])
+
+  // Agent states animation cycle
+  useEffect(() => {
+    const runCycle = () => {
+      const timeouts = []
+
+      // Reset all to waiting
+      setAgentStates([
+        { status: 'Waiting...', color: 'text-gray-400', borderColor: 'border-gray-500/30' },
+        { status: 'Waiting...', color: 'text-gray-400', borderColor: 'border-gray-500/30' },
+        { status: 'Waiting...', color: 'text-gray-400', borderColor: 'border-gray-500/30' },
+        { status: 'Waiting...', color: 'text-gray-400', borderColor: 'border-gray-500/30' },
+      ])
+
+      // After 1s: Coordinator → "Planning..." (yellow)
+      timeouts.push(setTimeout(() => {
+        setAgentStates(prev => [
+          { status: 'Planning...', color: 'text-yellow-400', borderColor: 'border-yellow-500/30' },
+          prev[1],
+          prev[2],
+          prev[3],
+        ])
+      }, 1000))
+
+      // After 2s: Coordinator → "Complete ✓" (green), Security → "Scanning..."
+      timeouts.push(setTimeout(() => {
+        setAgentStates(prev => [
+          { status: 'Complete ✓', color: 'text-green-400', borderColor: 'border-green-500/30' },
+          { status: 'Scanning...', color: 'text-yellow-400', borderColor: 'border-yellow-500/30' },
+          prev[2],
+          prev[3],
+        ])
+      }, 2000))
+
+      // After 3.5s: Security → "Complete ✓", Writer → "Writing..."
+      timeouts.push(setTimeout(() => {
+        setAgentStates(prev => [
+          prev[0],
+          { status: 'Complete ✓', color: 'text-green-400', borderColor: 'border-green-500/30' },
+          { status: 'Writing...', color: 'text-yellow-400', borderColor: 'border-yellow-500/30' },
+          prev[3],
+        ])
+      }, 3500))
+
+      // After 5s: Writer → "Complete ✓", Architecture → "Reviewing..."
+      timeouts.push(setTimeout(() => {
+        setAgentStates(prev => [
+          prev[0],
+          prev[1],
+          { status: 'Complete ✓', color: 'text-green-400', borderColor: 'border-green-500/30' },
+          { status: 'Reviewing...', color: 'text-yellow-400', borderColor: 'border-yellow-500/30' },
+        ])
+      }, 5000))
+
+      // After 6.5s: Architecture → "Complete ✓"
+      timeouts.push(setTimeout(() => {
+        setAgentStates(prev => [
+          prev[0],
+          prev[1],
+          prev[2],
+          { status: 'Complete ✓', color: 'text-green-400', borderColor: 'border-green-500/30' },
+        ])
+      }, 6500))
+
+      return timeouts
+    }
+
+    let timeouts = runCycle()
+
+    // After 8s: reset and loop
+    const interval = setInterval(() => {
+      timeouts.forEach(t => clearTimeout(t))
+      timeouts = runCycle()
+    }, 8000)
+
+    return () => {
+      timeouts.forEach(t => clearTimeout(t))
+      clearInterval(interval)
+    }
+  }, [])
 
   const triggerDemo = () => {
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'D', ctrlKey: true, shiftKey: true }))
@@ -21,6 +183,37 @@ function Hero() {
 
   return (
     <section className="relative min-h-screen bg-gray-950 bg-[radial-gradient(ellipse_at_top,_#1a0533_0%,_transparent_60%)] overflow-hidden">
+      {/* Animated Canvas Gradient Mesh Background */}
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 w-full h-full pointer-events-none"
+      />
+
+      {/* Floating Particles */}
+      {particles.map((particle) => (
+        <motion.div
+          key={particle.id}
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            left: `${particle.x}%`,
+            top: `${particle.y}%`,
+            width: `${particle.size}px`,
+            height: `${particle.size}px`,
+            background: 'rgba(139,92,246,0.6)',
+          }}
+          animate={{
+            y: [-10, 10, -10],
+            opacity: [0.3, 0.8, 0.3],
+          }}
+          transition={{
+            repeat: Infinity,
+            duration: particle.duration,
+            delay: particle.delay,
+            ease: 'easeInOut',
+          }}
+        />
+      ))}
+
       {/* Animated Background Blobs */}
       <motion.div
         className="absolute top-20 left-1/4 w-96 h-96 bg-purple-600 rounded-full blur-3xl opacity-20"
@@ -66,16 +259,25 @@ function Hero() {
           </span>
         </motion.h1>
 
-        {/* Subheading */}
-        <motion.p
-          className="text-gray-400 text-xl max-w-2xl mt-6"
+        {/* Subheading with Typewriter Effect */}
+        <motion.div
+          className="text-gray-400 text-xl max-w-2xl mt-6 h-8"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          4 specialized AI agents collaborate to find security vulnerabilities, 
-          generate documentation, and suggest architectural improvements — in real time.
-        </motion.p>
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={currentTagline}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.5 }}
+            >
+              {taglines[currentTagline]}
+            </motion.p>
+          </AnimatePresence>
+        </motion.div>
 
         {/* CTA Buttons */}
         <motion.div
@@ -153,6 +355,8 @@ function Hero() {
           <div className="space-y-3">
             {agents.map((agent, index) => {
               const Icon = agent.icon
+              const state = agentStates[index]
+              const isActive = state.status.includes('...') && state.status !== 'Waiting...'
               return (
                 <motion.div
                   key={agent.name}
@@ -163,26 +367,24 @@ function Hero() {
                 >
                   <div className="flex items-center gap-3">
                     <motion.div
-                      className={`w-2 h-2 rounded-full ${agent.color}`}
-                      animate={{ opacity: [1, 0.5, 1] }}
-                      transition={{ duration: 1.5, repeat: Infinity, delay: index * 0.2 }}
+                      className={`w-2 h-2 rounded-full ${
+                        state.status === 'Complete ✓'
+                          ? 'bg-green-500'
+                          : state.status === 'Waiting...'
+                          ? 'bg-gray-500'
+                          : 'bg-yellow-500'
+                      }`}
+                      animate={isActive ? { opacity: [1, 0.5, 1] } : { opacity: 1 }}
+                      transition={isActive ? { duration: 0.8, repeat: Infinity } : {}}
                     />
                     <Icon className="w-4 h-4 text-gray-400" />
                     <span className="text-white text-sm font-medium">{agent.name}</span>
                   </div>
                   <Badge
                     variant="outline"
-                    className={`text-xs ${
-                      agent.status === 'Planning'
-                        ? 'text-purple-400 border-purple-500/30'
-                        : agent.status === 'Scanning'
-                        ? 'text-red-400 border-red-500/30'
-                        : agent.status === 'Writing'
-                        ? 'text-blue-400 border-blue-500/30'
-                        : 'text-green-400 border-green-500/30'
-                    }`}
+                    className={`text-xs ${state.color} ${state.borderColor}`}
                   >
-                    {agent.status}
+                    {state.status}
                   </Badge>
                 </motion.div>
               )

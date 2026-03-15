@@ -1,81 +1,35 @@
-//  Code V1 Start
 
-
-// import { Router } from 'express'
-// import { requireAuth, syncUser } from '../middleware/auth.js'
-// import { attachUser } from '../middleware/planCheck.js'
-// import { getUserAnalyses, getAnalysisById, deleteAnalysis } from '../db/analysisService.js'
-
-// const router = Router()
-
-// // GET / - fetch user's analysis history
-// router.get('/', requireAuth, syncUser, attachUser, async (req, res) => {
-//   try {
-//     const plan = req.userRecord?.plan || 'free'
-//     const analyses = await getUserAnalyses(req.auth.userId, plan)
-
-//     return res.json({
-//       analyses,
-//       plan,
-//       total: analyses.length
-//     })
-//   } catch (error) {
-//     console.error('Failed to fetch history:', error.message)
-//     return res.status(500).json({ error: 'Failed to fetch analysis history' })
-//   }
-// })
-
-// // GET /:id - fetch single analysis with full results
-// router.get('/:id', requireAuth, syncUser, attachUser, async (req, res) => {
-//   try {
-//     const analysis = await getAnalysisById(req.params.id, req.auth.userId)
-
-//     if (!analysis) {
-//       return res.status(404).json({ error: 'Analysis not found' })
-//     }
-
-//     return res.json({ analysis })
-//   } catch (error) {
-//     console.error('Failed to fetch analysis:', error.message)
-//     return res.status(500).json({ error: 'Failed to fetch analysis' })
-//   }
-// })
-
-// // DELETE /:id - delete an analysis
-// router.delete('/:id', requireAuth, syncUser, attachUser, async (req, res) => {
-//   try {
-//     const deleted = await deleteAnalysis(req.params.id, req.auth.userId)
-
-//     if (!deleted) {
-//       return res.status(404).json({ error: 'Analysis not found' })
-//     }
-
-//     return res.json({ success: true })
-//   } catch (error) {
-//     console.error('Failed to delete analysis:', error.message)
-//     return res.status(500).json({ error: 'Failed to delete analysis' })
-//   }
-// })
-
-// export default router
-
-
-// Code V1 end
-
-
-
-// Code V2 Start
-
-import { Router } from 'express'
+import express from 'express'
 import { requireAuth, syncUser } from '../middleware/auth.js'
-import { attachUser, checkQuota } from '../middleware/planCheck.js'
-import { getUserAnalyses, getAnalysisById, deleteAnalysis, createAnalysis, completeAnalysis } from '../db/analysisService.js'
-import { incrementAnalysisCount } from '../db/userService.js'
+import { attachUser } from '../middleware/planCheck.js'
+import { 
+  getUserAnalyses, 
+  getAnalysisById, 
+  deleteAnalysis,
+  saveAnalysis,
+  searchAnalyses 
+} from '../db/analysisService.js'
 
-const router = Router()
+const router = express.Router()
 
-// POST /save - save a new analysis
-router.post('/save', requireAuth, syncUser, checkQuota, attachUser, async (req, res) => {
+// All routes require authentication
+router.use(requireAuth)
+router.use(syncUser)
+router.use(attachUser)
+
+// GET /api/history - Get all analyses for current user
+router.get('/', async (req, res) => {
+  try {
+    const analyses = await getUserAnalyses(req.auth.userId)
+    res.json({ analyses })
+  } catch (error) {
+    console.error('Error fetching history:', error)
+    res.status(500).json({ error: 'Failed to fetch analysis history' })
+  }
+})
+
+// POST /api/history/save - Save a new analysis (called by agentStore auto-save)
+router.post('/save', async (req, res) => {
   try {
     const { repoUrl, repoName, results, fileCount, bugCount, durationMs } = req.body
 
@@ -83,71 +37,98 @@ router.post('/save', requireAuth, syncUser, checkQuota, attachUser, async (req, 
       return res.status(400).json({ error: 'repoUrl is required' })
     }
 
-    // Create the analysis record
-    const analysis = await createAnalysis(req.auth.userId, repoUrl, repoName || '')
+    const analysis = await saveAnalysis(
+      req.auth.userId,
+      repoUrl,
+      repoName || repoUrl.split('/').slice(-2).join('/'),
+      {
+        ...results,
+        summary: {
+          ...(results?.summary || {}),
+          filesAnalyzed: fileCount || 0,
+          durationMs: durationMs || 0
+        },
+        bugs: results?.bugs?.bugs || results?.bugs || [],
+        bugCount: bugCount || 0
+      }
+    )
 
-    // Complete the analysis with results
-    await completeAnalysis(analysis.id, results, fileCount || 0, bugCount || 0, durationMs || 0)
-
-    // Increment the user's analysis count
-    await incrementAnalysisCount(req.auth.userId)
-
-    return res.json({ success: true, analysisId: analysis.id })
+    res.json({ success: true, analysis })
   } catch (error) {
-    console.error('Failed to save analysis:', error.message)
-    return res.status(500).json({ error: 'Failed to save analysis' })
+    console.error('Error saving analysis:', error)
+    res.status(500).json({ error: 'Failed to save analysis' })
   }
 })
 
-// GET / - fetch user's analysis history
-router.get('/', requireAuth, syncUser, attachUser, async (req, res) => {
+// GET /api/history/search?q=query - Search analyses by repo name or URL
+router.get('/search', async (req, res) => {
   try {
-    const plan = req.userRecord?.plan || 'free'
-    const analyses = await getUserAnalyses(req.auth.userId, plan)
-
-    return res.json({
-      analyses,
-      plan,
-      total: analyses.length
-    })
+    const query = req.query.q || ''
+    
+    if (!query || query.length < 2) {
+      return res.json({ analyses: [] })
+    }
+    
+    const analyses = await searchAnalyses(req.auth.userId, query)
+    res.json({ analyses })
   } catch (error) {
-    console.error('Failed to fetch history:', error.message)
-    return res.status(500).json({ error: 'Failed to fetch analysis history' })
+    console.error('Error searching analyses:', error)
+    res.status(500).json({ error: 'Failed to search analyses' })
   }
 })
 
-// GET /:id - fetch single analysis with full results
-router.get('/:id', requireAuth, syncUser, attachUser, async (req, res) => {
+// GET /api/history/:id - Get a single analysis by ID
+router.get('/:id', async (req, res) => {
   try {
     const analysis = await getAnalysisById(req.params.id, req.auth.userId)
-
+    
     if (!analysis) {
       return res.status(404).json({ error: 'Analysis not found' })
     }
-
-    return res.json({ analysis })
+    
+    res.json({ analysis })
   } catch (error) {
-    console.error('Failed to fetch analysis:', error.message)
-    return res.status(500).json({ error: 'Failed to fetch analysis' })
+    console.error('Error fetching analysis:', error)
+    res.status(500).json({ error: 'Failed to fetch analysis' })
   }
 })
 
-// DELETE /:id - delete an analysis
-router.delete('/:id', requireAuth, syncUser, attachUser, async (req, res) => {
+// GET /api/history/:id/export - Export analysis documentation as markdown file
+router.get('/:id/export', async (req, res) => {
   try {
-    const deleted = await deleteAnalysis(req.params.id, req.auth.userId)
-
-    if (!deleted) {
+    const analysis = await getAnalysisById(req.params.id, req.auth.userId)
+    
+    if (!analysis) {
       return res.status(404).json({ error: 'Analysis not found' })
     }
-
-    return res.json({ success: true })
+    
+    const documentation = analysis.results?.documentation
+    
+    if (!documentation) {
+      return res.status(404).json({ error: 'No documentation available for this analysis' })
+    }
+    
+    const repoName = analysis.repo_name || analysis.repo_url?.split('/').slice(-2).join('-') || 'analysis'
+    const sanitizedRepoName = repoName.replace(/[^a-zA-Z0-9-_]/g, '-')
+    
+    res.setHeader('Content-Type', 'text/markdown')
+    res.setHeader('Content-Disposition', `attachment; filename="${sanitizedRepoName}-analysis.md"`)
+    res.send(documentation)
   } catch (error) {
-    console.error('Failed to delete analysis:', error.message)
-    return res.status(500).json({ error: 'Failed to delete analysis' })
+    console.error('Error exporting analysis:', error)
+    res.status(500).json({ error: 'Failed to export analysis' })
+  }
+})
+
+// DELETE /api/history/:id - Delete an analysis
+router.delete('/:id', async (req, res) => {
+  try {
+    await deleteAnalysis(req.params.id, req.auth.userId)
+    res.json({ success: true })
+  } catch (error) {
+    console.error('Error deleting analysis:', error)
+    res.status(500).json({ error: 'Failed to delete analysis' })
   }
 })
 
 export default router
-
-// Code V2 end

@@ -3,15 +3,18 @@ import { create } from 'zustand'
 const useAuthStore = create((set, get) => ({
   // User plan data from our backend
   userProfile: null,
+  usageStats: null,
   isLoadingProfile: false,
   profileError: null,
 
   // Actions
   setUserProfile: (profile) => set({ userProfile: profile }),
+  setUsageStats: (usageStats) => set({ usageStats }),
   setLoadingProfile: (isLoadingProfile) => set({ isLoadingProfile }),
   setProfileError: (profileError) => set({ profileError }),
   clearProfile: () => set({
     userProfile: null,
+    usageStats: null,
     isLoadingProfile: false,
     profileError: null,
   }),

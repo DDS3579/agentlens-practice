@@ -1,198 +1,337 @@
-import useAuthStore from '../store/authStore.js'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Check, Zap, Lock } from 'lucide-react'
+
 import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import useAuth from '../hooks/useAuth.js'
+import useAuthStore from '../store/authStore.js'
+import PricingCard from '../components/billing/PricingCard.jsx'
+import UsageIndicator from '../components/billing/UsageIndicator.jsx'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
+import { 
+  Zap, CreditCard, Calendar, CheckCircle,
+  AlertCircle, ExternalLink, Mail, ArrowRight,
+  Shield, Clock, FileCode, Bug
+} from 'lucide-react'
+import { FadeIn, StaggerContainer } from '../components/ui/AnimatedPage.jsx'
+import { CountUp } from '../components/ui/CountUp.jsx'
 
-const freeFeatures = [
-  '5 analyses per month',
-  'All 4 AI agents',
-  'View bugs + documentation',
-  'Download markdown',
-  'Community support'
-]
+const Billing = () => {
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false)
+  const [showDowngradeConfirm, setShowDowngradeConfirm] = useState(false)
+  const { userProfile, isPro, analysesRemaining } = useAuth()
 
-const proFeatures = [
-  'Everything in Free',
-  'Unlimited analyses',
-  'Auto-Fix Agent ✨',
-  'GitHub PR creation',
-  '50 files per analysis',
-  'Unlimited history',
-  'Priority support'
-]
+  const freeFeatures = [
+    { text: '5 analyses per month', included: true },
+    { text: 'All 4 AI agents', included: true },
+    { text: 'Security vulnerability scanner', included: true },
+    { text: 'Documentation generator', included: true },
+    { text: 'Architecture review', included: true },
+    { text: 'Download markdown reports', included: true },
+    { text: 'Bring your own LLM', included: true },
+    { text: 'Auto-Fix Agent', included: false },
+    { text: 'GitHub PR creation', included: false },
+    { text: 'Unlimited analyses', included: false },
+    { text: 'Unlimited history', included: false },
+  ]
 
-function Billing() {
-  const userProfile = useAuthStore((state) => state.userProfile)
-  const [showUpgradeMessage, setShowUpgradeMessage] = useState(false)
+  const proFeatures = [
+    { text: 'Unlimited analyses', included: true, highlight: true },
+    { text: 'Auto-Fix Agent ⚡', included: true, highlight: true },
+    { text: 'GitHub PR creation', included: true, highlight: true },
+    { text: 'All 4 AI agents', included: true },
+    { text: 'Security vulnerability scanner', included: true },
+    { text: 'Documentation generator', included: true },
+    { text: 'Architecture review', included: true },
+    { text: '50 files per analysis', included: true },
+    { text: 'Unlimited history', included: true },
+    { text: 'OpenAI / Anthropic support', included: true },
+    { text: 'Priority support', included: true },
+  ]
 
-  const isPro = userProfile?.plan === 'pro'
-  const analysesUsed = userProfile?.analyses_this_month || 0
+  const faqItems = [
+    {
+      question: 'How do I upgrade?',
+      answer: 'Contact us at agentlens@demo.com',
+    },
+    {
+      question: 'What happens when I hit the free limit?',
+      answer: "You'll see an upgrade prompt. Your existing analyses are always accessible.",
+    },
+    {
+      question: 'Can I use my own API keys?',
+      answer: 'Yes! Go to Settings → LLM Config to add your own Groq, OpenAI, or Anthropic key.',
+    },
+  ]
 
-  const handleUpgradeClick = () => {
-    setShowUpgradeMessage(true)
+  const handleManageSubscription = () => {
+    alert('Subscription management coming soon!')
+  }
+
+  const handleDowngrade = () => {
+    alert('Downgrade functionality coming soon!')
+    setShowDowngradeConfirm(false)
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 pt-24 pb-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-white">Billing & Plan</h1>
-            <p className="text-gray-400 mt-1">Manage your subscription and usage</p>
-          </div>
-          <Badge 
-            className={isPro 
-              ? 'bg-purple-600 text-white text-sm px-3 py-1' 
-              : 'bg-gray-800 text-gray-300 border-gray-700 text-sm px-3 py-1'
-            }
-          >
-            {isPro ? 'Pro Plan' : 'Free Plan'}
-          </Badge>
-        </div>
-
-        {/* Current Plan Card */}
-        <Card className="bg-gray-900 border-white/10 mb-8">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Zap className="w-5 h-5 text-purple-400" />
-              Current Plan
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-2xl font-bold text-white">
+    <StaggerContainer className="min-h-screen bg-gray-950 p-6 md:p-8">
+      <div className="max-w-6xl mx-auto space-y-8">
+        {/* Page Header */}
+        <FadeIn>
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <div className="flex items-center gap-3">
+                <h1 className="text-3xl md:text-4xl font-bold font-display text-white">
+                  Billing & Plan
+                </h1>
+                <Badge className={isPro ? 'bg-green-600 hover:bg-green-600' : 'bg-gray-600 hover:bg-gray-600'}>
                   {isPro ? 'Pro' : 'Free'}
-                </h3>
+                </Badge>
+              </div>
+              <p className="text-gray-400 mt-2">
+                Manage your subscription and usage
+              </p>
+            </div>
+          </div>
+        </FadeIn>
+
+        {/* Current Plan Summary */}
+        <FadeIn delay={0.1}>
+          <div className="bg-gray-900 border border-white/10 rounded-2xl p-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+              {/* Left side */}
+              <div className="flex items-center gap-4">
+                <div className={`p-3 rounded-xl ${isPro ? 'bg-purple-600/20' : 'bg-gray-800'}`}>
+                  <Zap className={`w-8 h-8 ${isPro ? 'text-purple-400' : 'text-gray-400'}`} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-white">
+                    {isPro ? 'Pro Plan' : 'Free Plan'}
+                  </h3>
+                  <p className="text-gray-400">
+                    {isPro ? 'Full access to all features' : 'Basic access with limited analyses'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Right side */}
+              <div className="flex flex-col items-start md:items-end gap-2">
                 {isPro ? (
-                  <p className="text-green-400 flex items-center gap-1 mt-1">
-                    <Check className="w-4 h-4" />
-                    Unlimited analyses
-                  </p>
+                  <>
+                    <div className="flex items-center gap-2 text-green-400">
+                      <CheckCircle className="w-5 h-5" />
+                      <span>Unlimited analyses ✓</span>
+                    </div>
+                    <p className="text-gray-400 text-sm">
+                      Pro since {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                    </p>
+                    <Badge className="bg-purple-600/20 text-purple-400 hover:bg-purple-600/20">
+                      All features unlocked
+                    </Badge>
+                  </>
                 ) : (
-                  <p className="text-gray-400 mt-1">
-                    5 analyses / month used: <span className="text-white font-medium">{analysesUsed}/5</span>
-                  </p>
+                  <>
+                    <UsageIndicator 
+                      used={5 - (analysesRemaining || 0)} 
+                      total={5} 
+                      showLabel={false}
+                    />
+                    <p className="text-gray-400 text-sm">
+                      <CountUp end={analysesRemaining || 0} /> analyses remaining this month
+                    </p>
+                  </>
                 )}
               </div>
-              <div className="text-right">
-                <p className="text-3xl font-bold text-white">
-                  {isPro ? '$29' : '$0'}
-                  <span className="text-lg text-gray-400 font-normal">/mo</span>
-                </p>
-              </div>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Upgrade Message */}
-        {showUpgradeMessage && (
-          <div className="bg-purple-950 border border-purple-500 rounded-xl p-4 text-purple-200 mb-8">
-            🚀 Payment integration coming soon! For demo purposes, contact the team to get Pro access.
+            {isPro && (
+              <>
+                <Separator className="my-6 bg-white/10" />
+                <div className="flex justify-end">
+                  <Button 
+                    variant="outline" 
+                    onClick={handleManageSubscription}
+                    className="gap-2"
+                  >
+                    <CreditCard className="w-4 h-4" />
+                    Manage Subscription
+                    <ExternalLink className="w-4 h-4" />
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
-        )}
+        </FadeIn>
 
-        {/* Pricing Cards */}
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Free Plan Card */}
-          <Card className="bg-gray-900 border-white/10">
-            <CardHeader>
-              <CardTitle className="text-white">
-                <div className="flex items-center justify-between">
-                  <span>Free</span>
-                  <span className="text-2xl font-bold">
-                    $0<span className="text-lg text-gray-400 font-normal">/mo</span>
-                  </span>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-3">
-                {freeFeatures.map((feature, index) => (
-                  <li key={index} className="flex items-center gap-2 text-gray-300">
-                    <div className="w-5 h-5 rounded-full bg-gray-800 flex items-center justify-center flex-shrink-0">
-                      <Check className="w-3 h-3 text-gray-400" />
+        {/* Plan Comparison */}
+        <FadeIn delay={0.2}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            <PricingCard
+              plan="free"
+              price="$0"
+              period="/month"
+              title="Free"
+              subtitle="Perfect for exploring"
+              features={freeFeatures}
+              ctaLabel={isPro ? "Downgrade to Free" : "Current Plan"}
+              ctaDisabled={!isPro}
+              isCurrentPlan={!isPro}
+              onCtaClick={() => isPro && setShowDowngradeConfirm(true)}
+            />
+            <PricingCard
+              plan="pro"
+              price="$29"
+              period="/month"
+              title="Pro"
+              subtitle="For serious developers"
+              features={proFeatures}
+              ctaLabel={isPro ? "Current Plan" : "Upgrade to Pro"}
+              ctaDisabled={isPro}
+              isCurrentPlan={isPro}
+              isMostPopular={true}
+              onCtaClick={() => !isPro && setShowUpgradePrompt(true)}
+            />
+          </div>
+        </FadeIn>
+
+        {/* Upgrade Prompt */}
+        <AnimatePresence>
+          {showUpgradePrompt && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="overflow-hidden"
+            >
+              <div className="bg-purple-950/50 border border-purple-500 rounded-2xl p-8 max-w-2xl mx-auto">
+                <div className="flex flex-col items-center text-center">
+                  <motion.div
+                    animate={{ rotate: [0, 10, -10, 0] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    <Zap className="w-16 h-16 text-purple-400 mb-4" />
+                  </motion.div>
+                  <h2 className="text-2xl font-bold font-display text-white mb-2">
+                    Upgrade to Pro
+                  </h2>
+                  <p className="text-gray-400 mb-6">
+                    Payment processing is coming soon!
+                  </p>
+
+                  <div className="bg-gray-900 rounded-xl p-6 w-full mb-6">
+                    <div className="flex items-center justify-center gap-3 text-white">
+                      <Mail className="w-6 h-6 text-purple-400" />
+                      <span className="text-lg font-medium">agentlens@demo.com</span>
                     </div>
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-              <Button 
-                variant="outline" 
-                className="w-full mt-6 border-gray-700 text-gray-400 hover:bg-gray-800"
-                disabled
-              >
-                {!isPro ? 'Current Plan' : 'Downgrade'}
-              </Button>
-            </CardContent>
-          </Card>
+                    <p className="text-gray-400 mt-3 text-sm">
+                      Send us an email with your account email to get Pro access for the demo
+                    </p>
+                  </div>
 
-          {/* Pro Plan Card */}
-          <Card className="bg-gray-900 border-purple-500 border-2 relative">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-              <Badge className="bg-purple-600 text-white">
-                Most Popular
-              </Badge>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowUpgradePrompt(false)}
+                    className="mb-4"
+                  >
+                    Dismiss
+                  </Button>
+
+                  <p className="text-gray-500 text-xs">
+                    🚀 This is a hackathon demo — Pro access granted manually
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Downgrade Confirm */}
+        <AnimatePresence>
+          {showDowngradeConfirm && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="overflow-hidden"
+            >
+              <div className="bg-red-950/30 border border-red-500/50 rounded-2xl p-8 max-w-2xl mx-auto">
+                <div className="flex flex-col items-center text-center">
+                  <AlertCircle className="w-16 h-16 text-red-400 mb-4" />
+                  <h2 className="text-2xl font-bold font-display text-white mb-2">
+                    Are you sure you want to downgrade?
+                  </h2>
+                  <p className="text-gray-400 mb-6">
+                    You'll lose access to these features:
+                  </p>
+
+                  <ul className="text-left space-y-3 mb-6">
+                    <li className="flex items-center gap-2 text-red-400">
+                      <AlertCircle className="w-4 h-4" />
+                      Auto-Fix Agent
+                    </li>
+                    <li className="flex items-center gap-2 text-red-400">
+                      <AlertCircle className="w-4 h-4" />
+                      Unlimited analyses (back to 5/month)
+                    </li>
+                    <li className="flex items-center gap-2 text-red-400">
+                      <AlertCircle className="w-4 h-4" />
+                      GitHub PR creation
+                    </li>
+                    <li className="flex items-center gap-2 text-red-400">
+                      <AlertCircle className="w-4 h-4" />
+                      Priority support
+                    </li>
+                  </ul>
+
+                  <div className="flex gap-4">
+                    <Button 
+                      variant="default"
+                      onClick={() => setShowDowngradeConfirm(false)}
+                      className="bg-purple-600 hover:bg-purple-500"
+                    >
+                      Keep Pro
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      onClick={handleDowngrade}
+                      className="border-red-500 text-red-400 hover:bg-red-500/10"
+                    >
+                      Downgrade
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* FAQ Section */}
+        <FadeIn delay={0.3}>
+          <div className="mt-12">
+            <h2 className="text-2xl font-bold font-display text-white mb-6 text-center">
+              Frequently Asked Questions
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+              {faqItems.map((item, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 + index * 0.1 }}
+                  className="bg-gray-900 rounded-xl p-4"
+                >
+                  <h3 className="text-white font-medium mb-2">{item.question}</h3>
+                  <p className="text-gray-400 text-sm">{item.answer}</p>
+                </motion.div>
+              ))}
             </div>
-            <CardHeader>
-              <CardTitle className="text-white">
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    Pro
-                    <Zap className="w-5 h-5 text-purple-400" />
-                  </span>
-                  <span className="text-2xl font-bold">
-                    $29<span className="text-lg text-gray-400 font-normal">/mo</span>
-                  </span>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-3">
-                {proFeatures.map((feature, index) => (
-                  <li key={index} className="flex items-center gap-2 text-gray-300">
-                    <div className="w-5 h-5 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
-                      <Check className="w-3 h-3 text-purple-400" />
-                    </div>
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-              {isPro ? (
-                <Button 
-                  className="w-full mt-6 bg-purple-600 hover:bg-purple-600 cursor-default"
-                  disabled
-                >
-                  <Check className="w-4 h-4 mr-2" />
-                  You're on Pro
-                </Button>
-              ) : (
-                <Button 
-                  className="w-full mt-6 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600"
-                  onClick={handleUpgradeClick}
-                >
-                  <Zap className="w-4 h-4 mr-2" />
-                  Upgrade to Pro
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* FAQ or Contact */}
-        <div className="mt-12 text-center">
-          <p className="text-gray-500">
-            Need help or have questions?{' '}
-            <a href="mailto:support@agentlens.dev" className="text-purple-400 hover:text-purple-300 transition-colors">
-              Contact our team
-            </a>
-          </p>
-        </div>
+          </div>
+        </FadeIn>
       </div>
-    </div>
+    </StaggerContainer>
   )
 }
 

@@ -23,27 +23,35 @@ export async function getUserById(clerkUserId) {
 }
 
 // Create or update user from Clerk JWT payload.
-// clerkPayload has: { sub, email, name } (sub is the Clerk user ID)
+// Accepts both shapes:
+//   { sub, email, name }  (from clerkPayload)
+//   { clerk_id, email, name, image_url }  (from auth middleware syncUser)
 // If user exists, update email/name. If not, create with plan='free'.
 // Returns the user object.
 export async function upsertUser(clerkPayload) {
   try {
-    const { sub, email, name } = clerkPayload
+    // Support both payload shapes
+    const sub = clerkPayload.sub || clerkPayload.clerk_id
+    const email = clerkPayload.email
+    const name = clerkPayload.name
+    const imageUrl = clerkPayload.image_url || null
 
-    if (!sub || !email) {
-      throw new Error('Missing required fields: sub and email are required')
+    if (!sub) {
+      // If no sub/clerk_id, silently skip (non-authenticated user)
+      return null
     }
 
     const existingUser = await getUserById(sub)
 
     if (existingUser) {
+      const updateData = { updated_at: new Date().toISOString() }
+      if (email) updateData.email = email
+      if (name) updateData.name = name
+      if (imageUrl) updateData.image_url = imageUrl
+
       const { data, error } = await supabase
         .from('users')
-        .update({
-          email,
-          name,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', sub)
         .select()
         .single()
@@ -58,8 +66,9 @@ export async function upsertUser(clerkPayload) {
         .from('users')
         .insert({
           id: sub,
-          email,
-          name,
+          email: email || '',
+          name: name || '',
+          image_url: imageUrl,
           plan: 'free',
           analyses_this_month: 0,
           month_reset_date: new Date().toISOString(),
@@ -79,6 +88,55 @@ export async function upsertUser(clerkPayload) {
     throw new Error(`upsertUser failed: ${err.message}`)
   }
 }
+
+// Update user profile fields by Clerk ID.
+// updates: object with fields to update (e.g. { display_name, avatar_url })
+// Returns updated user or null.
+export async function updateUser(clerkUserId, updates) {
+  try {
+    const updateData = {
+      ...updates,
+      updated_at: new Date().toISOString()
+    }
+
+    const { data, error } = await supabase
+      .from('users')
+      .update(updateData)
+      .eq('id', clerkUserId)
+      .select()
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null
+      }
+      throw new Error(`Failed to update user: ${error.message}`)
+    }
+
+    return data
+  } catch (err) {
+    throw new Error(`updateUser failed: ${err.message}`)
+  }
+}
+
+// Delete a user by Clerk ID. Returns true if deleted, null if not found.
+export async function deleteUser(clerkUserId) {
+  try {
+    const { error } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', clerkUserId)
+
+    if (error) {
+      throw new Error(`Failed to delete user: ${error.message}`)
+    }
+
+    return true
+  } catch (err) {
+    throw new Error(`deleteUser failed: ${err.message}`)
+  }
+}
+
 
 // Check if user can run an analysis.
 // Free plan: max 5 per month. Pro plan: unlimited.

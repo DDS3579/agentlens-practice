@@ -1,4 +1,6 @@
+
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import useAgentStore from '../../store/agentStore.js';
 
 const SecurityTab = () => {
@@ -179,7 +181,12 @@ const SecurityTab = () => {
 
       {/* Bug List or Empty State */}
       {bugs.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+          className="flex flex-col items-center justify-center py-16 text-center"
+        >
           <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mb-4">
             <svg
               className="w-8 h-8 text-green-500"
@@ -199,92 +206,115 @@ const SecurityTab = () => {
           <p className="text-gray-400 max-w-md">
             The Security Specialist Agent analyzed all files and found no vulnerabilities.
           </p>
-        </div>
+        </motion.div>
       ) : (
         <div className="space-y-4">
-          {filteredBugs.map((bug, index) => {
-            const bugId = bug.id || `bug-${index}`;
-            const isExpanded = expandedBugs.has(bugId);
+          <AnimatePresence>
+            {filteredBugs.map((bug, index) => {
+              const bugId = bug.id || `bug-${index}`;
+              const isExpanded = expandedBugs.has(bugId);
 
-            return (
-              <div
-                key={bugId}
-                className="bg-[#1a1d2e] border border-[#2d3748] rounded-lg overflow-hidden hover:border-[#3d4758] transition-colors"
-                style={{ borderLeftWidth: '4px', borderLeftColor: getSeverityBorderColor(bug.severity) }}
-              >
-                <div className="p-4">
-                  {/* Header row */}
-                  <div className="flex items-start justify-between gap-4 mb-2">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`severity-${bug.severity} px-2 py-0.5 rounded text-xs font-medium uppercase`}>
-                        {bug.severity}
-                      </span>
-                      <span className="bg-[#252a3e] text-gray-300 px-2 py-0.5 rounded text-xs font-medium">
-                        {humanizeType(bug.type)}
-                      </span>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      {bug.file && (
-                        <span className="font-mono text-sm text-gray-400">
-                          {bug.file}
-                          {bug.line && <span className="text-gray-500">:{bug.line}</span>}
-                        </span>
-                      )}
+              return (
+                <motion.div
+                  key={bugId}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{
+                    opacity: 1,
+                    x: 0,
+                    backgroundColor: ['rgba(139,92,246,0.2)', 'rgba(0,0,0,0)']
+                  }}
+                  transition={{ delay: index * 0.08, duration: 0.3 }}
+                  layout
+                >
+                  <div
+                    className="bg-[#1a1d2e] border border-[#2d3748] rounded-lg overflow-hidden hover:border-[#3d4758] transition-colors"
+                    style={{ borderLeftWidth: '4px', borderLeftColor: getSeverityBorderColor(bug.severity) }}
+                  >
+                    <div className="p-4">
+                      {/* Header row */}
+                      <div className="flex items-start justify-between gap-4 mb-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`severity-${bug.severity} px-2 py-0.5 rounded text-xs font-medium uppercase`}>
+                            {bug.severity}
+                          </span>
+                          <span className="bg-[#252a3e] text-gray-300 px-2 py-0.5 rounded text-xs font-medium">
+                            {humanizeType(bug.type)}
+                          </span>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          {bug.file && (
+                            <span className="font-mono text-sm text-gray-400">
+                              {bug.file}
+                              {bug.line && <span className="text-gray-500">:{bug.line}</span>}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Title */}
+                      <h4 className="text-white font-semibold mb-2">{bug.title}</h4>
+
+                      {/* Description */}
+                      <p className={`text-gray-400 text-sm ${!isExpanded ? 'line-clamp-2' : ''}`}>
+                        {bug.description}
+                      </p>
+
+                      {/* Expand/Collapse button */}
+                      <button
+                        onClick={() => toggleBugExpanded(bugId)}
+                        className="mt-3 text-indigo-400 hover:text-indigo-300 text-sm font-medium transition-colors"
+                      >
+                        {isExpanded ? 'Hide Fix' : 'Show Fix'}
+                      </button>
+
+                      {/* Expanded section */}
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.25, ease: 'easeInOut' }}
+                            style={{ overflow: 'hidden' }}
+                          >
+                            <div className="mt-4 space-y-4">
+                              {/* Vulnerable Code */}
+                              {bug.code && (
+                                <div>
+                                  <h5 className="text-sm font-medium text-gray-300 mb-2">Vulnerable Code</h5>
+                                  <pre className="bg-[#0f1117] rounded-lg p-4 overflow-x-auto">
+                                    <code className="font-mono text-sm text-red-400">{bug.code}</code>
+                                  </pre>
+                                </div>
+                              )}
+
+                              {/* Suggested Fix */}
+                              {bug.suggestedFix && (
+                                <div>
+                                  <h5 className="text-sm font-medium text-gray-300 mb-2">Suggested Fix</h5>
+                                  <p className="text-gray-400 text-sm">{bug.suggestedFix}</p>
+                                </div>
+                              )}
+
+                              {/* Fixed Code */}
+                              {bug.fixedCode && (
+                                <div>
+                                  <h5 className="text-sm font-medium text-gray-300 mb-2">Fixed Code</h5>
+                                  <pre className="bg-[#0f1117] rounded-lg p-4 overflow-x-auto">
+                                    <code className="font-mono text-sm text-green-400">{bug.fixedCode}</code>
+                                  </pre>
+                                </div>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   </div>
-
-                  {/* Title */}
-                  <h4 className="text-white font-semibold mb-2">{bug.title}</h4>
-
-                  {/* Description */}
-                  <p className={`text-gray-400 text-sm ${!isExpanded ? 'line-clamp-2' : ''}`}>
-                    {bug.description}
-                  </p>
-
-                  {/* Expand/Collapse button */}
-                  <button
-                    onClick={() => toggleBugExpanded(bugId)}
-                    className="mt-3 text-indigo-400 hover:text-indigo-300 text-sm font-medium transition-colors"
-                  >
-                    {isExpanded ? 'Hide Fix' : 'Show Fix'}
-                  </button>
-
-                  {/* Expanded section */}
-                  {isExpanded && (
-                    <div className="mt-4 space-y-4">
-                      {/* Vulnerable Code */}
-                      {bug.code && (
-                        <div>
-                          <h5 className="text-sm font-medium text-gray-300 mb-2">Vulnerable Code</h5>
-                          <pre className="bg-[#0f1117] rounded-lg p-4 overflow-x-auto">
-                            <code className="font-mono text-sm text-red-400">{bug.code}</code>
-                          </pre>
-                        </div>
-                      )}
-
-                      {/* Suggested Fix */}
-                      {bug.suggestedFix && (
-                        <div>
-                          <h5 className="text-sm font-medium text-gray-300 mb-2">Suggested Fix</h5>
-                          <p className="text-gray-400 text-sm">{bug.suggestedFix}</p>
-                        </div>
-                      )}
-
-                      {/* Fixed Code */}
-                      {bug.fixedCode && (
-                        <div>
-                          <h5 className="text-sm font-medium text-gray-300 mb-2">Fixed Code</h5>
-                          <pre className="bg-[#0f1117] rounded-lg p-4 overflow-x-auto">
-                            <code className="font-mono text-sm text-green-400">{bug.fixedCode}</code>
-                          </pre>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
         </div>
       )}
     </div>

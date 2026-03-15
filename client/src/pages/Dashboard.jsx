@@ -1,7 +1,9 @@
+
 import { useState, useEffect } from "react";
 import useAuth from "../hooks/useAuth.js";
 import useAgentStore from "../store/agentStore.js";
 import useFixStore from "../store/fixStore.js";
+import { useFixStream } from "../hooks/useFixStream.js";
 import GithubInput from "../components/github/GithubInput.jsx";
 import AgentCard from "../components/agents/AgentCard.jsx";
 import AgentFlowGraph from "../components/agents/AgentFlowGraph.jsx";
@@ -37,6 +39,7 @@ function Dashboard() {
 
   const {
     userProfile,
+    usageStats,
     isPro,
     canRunAnalysis,
     analysesRemaining,
@@ -44,6 +47,7 @@ function Dashboard() {
     getToken,
   } = useAuth();
 
+  const agentStore = useAgentStore();
   const {
     agents,
     isAnalyzing,
@@ -55,8 +59,9 @@ function Dashboard() {
     repoInfo,
     activityLog,
     resetPipeline,
-  } = useAgentStore();
+  } = agentStore;
 
+  const fixStore = useFixStore();
   const {
     openFiles,
     activeFilePath,
@@ -70,7 +75,9 @@ function Dashboard() {
     saveFile,
     resetFile,
     hideDiffView,
-  } = useFixStore();
+  } = fixStore;
+
+  const { startSingleFix, startAllFixes, cancelFix } = useFixStream();
 
   // Set token getter for agentStore to use
   useEffect(() => {
@@ -186,6 +193,18 @@ function Dashboard() {
             <p className="text-gray-400 mt-1">
               {currentDate} · Ready to analyze some code?
             </p>
+            {usageStats && (
+              <div className="flex items-center gap-6 mt-2 text-sm text-gray-400">
+                <span className="flex items-center gap-1">
+                  <Bug className="w-4 h-4 text-red-400" />
+                  {usageStats.totalBugs} bugs found total
+                </span>
+                <span className="flex items-center gap-1">
+                  <FileCode className="w-4 h-4 text-blue-400" />
+                  {usageStats.totalAnalyses} analyses run
+                </span>
+              </div>
+            )}
           </div>
           <div className="flex-shrink-0 w-full md:w-auto md:max-w-xs">
             <UsageIndicator
@@ -428,7 +447,26 @@ function Dashboard() {
 
             {/* Fix Agent - Shows after security agent completes */}
             {securityAgentComplete && (
-              <FixAgent onUpgradeClick={handleFixAgentUpgrade} />
+              <FixAgent
+                onUpgradeClick={() => {
+                  setUpgradeFeature({
+                    name: 'Auto-Fix Agent',
+                    description: 'Let AI automatically fix all detected bugs in your code. Watch as fixes are applied in real-time with full diff previews.'
+                  });
+                  setShowUpgradeModal(true);
+                }}
+                onFixSingle={(bug) => {
+                  const fileContent = fixStore.openFiles[bug.file]?.current || '';
+                  startSingleFix(bug, fileContent, agentStore.analysisId);
+                }}
+                onFixAll={(bugs) => {
+                  const fileContents = Object.fromEntries(
+                    Object.entries(fixStore.openFiles).map(([k, v]) => [k, v.current])
+                  );
+                  startAllFixes(bugs, fileContents, agentStore.analysisId);
+                }}
+                onCancel={cancelFix}
+              />
             )}
           </div>
 

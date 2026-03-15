@@ -1,4 +1,6 @@
+
 import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import useAgentStore from "../../store/agentStore.js";
 
 export default function ActivityFeed({ activities = [] }) {
@@ -60,123 +62,171 @@ export default function ActivityFeed({ activities = [] }) {
       const content = parts ? parts[2] : message;
 
       return (
-        <div
+        <motion.div
           key={id}
-          className="bg-[#1e1b4b] border-l-[3px] border-l-[#6366f1] rounded-md p-3 my-2 relative"
+          initial={{ opacity: 0, x: -16, height: 0 }}
+          animate={{
+            opacity: 1,
+            x: 0,
+            height: 'auto',
+            borderColor: ['rgba(139,92,246,0.8)', 'rgba(139,92,246,0.2)'],
+          }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
         >
-          <div className="absolute top-2 right-2">
-            <span className="text-[10px] bg-[#312e81] text-indigo-300 px-2 py-0.5 rounded-full">
-              💬 Agent Message
+          <div
+            className="bg-[#1e1b4b] border-l-[3px] border-l-[#6366f1] rounded-md p-3 my-2 relative"
+          >
+            <div className="absolute top-2 right-2">
+              <span className="text-[10px] bg-[#312e81] text-indigo-300 px-2 py-0.5 rounded-full">
+                💬 Agent Message
+              </span>
+            </div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-indigo-400 font-medium flex items-center gap-1">
+                {getAgentEmoji(resolvedAgent)}
+                <span>{getAgentDisplayName(resolvedAgent)}</span>
+              </span>
+              <span className="text-indigo-300">→</span>
+              <span className="text-indigo-400 font-medium flex items-center gap-1">
+                {getAgentEmoji(toAgent.toLowerCase())}
+                <span>{getAgentDisplayName(toAgent.toLowerCase())}</span>
+              </span>
+            </div>
+            <p className="text-gray-100 text-sm pr-20">{content}</p>
+            <span className="text-[10px] text-gray-500 mt-2 block">
+              {formatTimestamp(timestamp)}
             </span>
           </div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-indigo-400 font-medium flex items-center gap-1">
-              {getAgentEmoji(resolvedAgent)}
-              <span>{getAgentDisplayName(resolvedAgent)}</span>
-            </span>
-            <span className="text-indigo-300">→</span>
-            <span className="text-indigo-400 font-medium flex items-center gap-1">
-              {getAgentEmoji(toAgent.toLowerCase())}
-              <span>{getAgentDisplayName(toAgent.toLowerCase())}</span>
-            </span>
-          </div>
-          <p className="text-gray-100 text-sm pr-20">{content}</p>
-          <span className="text-[10px] text-gray-500 mt-2 block">
-            {formatTimestamp(timestamp)}
-          </span>
-        </div>
+        </motion.div>
       );
     }
 
     if (type === "finding" || type === "result") {
       const isBug = message.toLowerCase().includes("bug") || message.toLowerCase().includes("issue");
       return (
-        <div
+        <motion.div
           key={id}
-          className={`${isBug ? "bg-[#0f2419] border-l-[#16a34a]" : "bg-[#0f1a2e] border-l-[#2563eb]"} 
-                      border-l-[3px] rounded-md px-3 py-2 my-1`}
+          initial={{ opacity: 0, x: -16, height: 0 }}
+          animate={{ opacity: 1, x: 0, height: 'auto' }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
         >
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500">
-              {formatTimestamp(timestamp)}
-            </span>
-            <span>{getAgentEmoji(resolvedAgent)}</span>
-            <span
-              className={`text-sm ${isBug ? "text-green-300" : "text-blue-300"}`}
-            >
-              Found: {message}
-            </span>
+          <div
+            className={`${isBug ? "bg-[#0f2419] border-l-[#16a34a]" : "bg-[#0f1a2e] border-l-[#2563eb]"} 
+                        border-l-[3px] rounded-md px-3 py-2 my-1`}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">
+                {formatTimestamp(timestamp)}
+              </span>
+              <span>{getAgentEmoji(resolvedAgent)}</span>
+              <span
+                className={`text-sm ${isBug ? "text-green-300" : "text-blue-300"}`}
+              >
+                Found: {message}
+              </span>
+            </div>
           </div>
-        </div>
+        </motion.div>
       );
     }
 
     if (type === "plan") {
       return (
-        <div
+        <motion.div
           key={id}
-          className="bg-[#1e1040] border-l-[3px] border-l-[#9333ea] rounded-md px-3 py-2 my-2"
+          initial={{ opacity: 0, x: -16, height: 0 }}
+          animate={{ opacity: 1, x: 0, height: 'auto' }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
         >
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs text-gray-500">
-              {formatTimestamp(timestamp)}
-            </span>
-            <span>{getAgentEmoji("coordinator")}</span>
-            <span className="text-purple-300 font-medium">Plan Created</span>
+          <div
+            className="bg-[#1e1040] border-l-[3px] border-l-[#9333ea] rounded-md px-3 py-2 my-2"
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs text-gray-500">
+                {formatTimestamp(timestamp)}
+              </span>
+              <span>{getAgentEmoji("coordinator")}</span>
+              <span className="text-purple-300 font-medium">Plan Created</span>
+            </div>
+            <p className="text-sm text-gray-200 ml-6">{message}</p>
           </div>
-          <p className="text-sm text-gray-200 ml-6">{message}</p>
-        </div>
+        </motion.div>
       );
     }
 
     if (type === "agent_status" || type === "agent_start" || type === "progress" || type === "agent_complete" || type === "stream") {
       return (
-        <div
+        <motion.div
           key={id}
-          className="flex items-center gap-2 py-1 px-2 text-[#64748b]"
+          initial={{ opacity: 0, x: -16, height: 0 }}
+          animate={{ opacity: 1, x: 0, height: 'auto' }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
         >
-          <span className="text-xs">{formatTimestamp(timestamp)}</span>
-          <span>{getAgentEmoji(resolvedAgent)}</span>
-          <span className="text-sm">{message}</span>
-        </div>
+          <div
+            className="flex items-center gap-2 py-1 px-2 text-[#64748b]"
+          >
+            <span className="text-xs">{formatTimestamp(timestamp)}</span>
+            <span>{getAgentEmoji(resolvedAgent)}</span>
+            <span className="text-sm">{message}</span>
+          </div>
+        </motion.div>
       );
     }
 
     if (type === "system" || type === "info") {
       return (
-        <div
+        <motion.div
           key={id}
-          className="flex items-center gap-2 py-1 px-2 text-slate-500"
+          initial={{ opacity: 0, x: -16, height: 0 }}
+          animate={{ opacity: 1, x: 0, height: 'auto' }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
         >
-          <span className="text-xs">{formatTimestamp(timestamp)}</span>
-          <span>⚙</span>
-          <span className="text-sm">{message}</span>
-        </div>
+          <div
+            className="flex items-center gap-2 py-1 px-2 text-slate-500"
+          >
+            <span className="text-xs">{formatTimestamp(timestamp)}</span>
+            <span>⚙</span>
+            <span className="text-sm">{message}</span>
+          </div>
+        </motion.div>
       );
     }
 
     if (type === "error") {
       return (
-        <div
+        <motion.div
           key={id}
-          className="bg-red-900/30 border-l-[3px] border-l-red-500 rounded-md px-3 py-2 my-1"
+          initial={{ opacity: 0, x: -16, height: 0 }}
+          animate={{ opacity: 1, x: 0, height: 'auto' }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
         >
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500">
-              {formatTimestamp(timestamp)}
-            </span>
-            <span>❌</span>
-            <span className="text-sm text-red-300">{message}</span>
+          <div
+            className="bg-red-900/30 border-l-[3px] border-l-red-500 rounded-md px-3 py-2 my-1"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">
+                {formatTimestamp(timestamp)}
+              </span>
+              <span>❌</span>
+              <span className="text-sm text-red-300">{message}</span>
+            </div>
           </div>
-        </div>
+        </motion.div>
       );
     }
 
     return (
-      <div key={id} className="flex items-center gap-2 py-1 px-2 text-gray-500">
-        <span className="text-xs">{formatTimestamp(timestamp)}</span>
-        <span className="text-sm">{message}</span>
-      </div>
+      <motion.div
+        key={id}
+        initial={{ opacity: 0, x: -16, height: 0 }}
+        animate={{ opacity: 1, x: 0, height: 'auto' }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
+      >
+        <div className="flex items-center gap-2 py-1 px-2 text-gray-500">
+          <span className="text-xs">{formatTimestamp(timestamp)}</span>
+          <span className="text-sm">{message}</span>
+        </div>
+      </motion.div>
     );
   };
 
@@ -206,7 +256,12 @@ export default function ActivityFeed({ activities = [] }) {
         className="flex-1 overflow-y-auto max-h-[420px] pr-1 scrollbar-thin"
       >
         {visibleFeed.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center py-12">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+            className="flex flex-col items-center justify-center h-full text-center py-12"
+          >
             <span className="text-3xl mb-3">🔌</span>
             <p className="text-gray-400 font-medium">
               Waiting for analysis to start...
@@ -214,10 +269,12 @@ export default function ActivityFeed({ activities = [] }) {
             <p className="text-sm text-gray-600 mt-1">
               Events will appear here in real-time
             </p>
-          </div>
+          </motion.div>
         ) : (
           <>
-            {visibleFeed.map(renderItem)}
+            <AnimatePresence initial={false}>
+              {visibleFeed.map(renderItem)}
+            </AnimatePresence>
             <div ref={bottomRef} />
           </>
         )}

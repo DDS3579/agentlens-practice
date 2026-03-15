@@ -1,65 +1,134 @@
+import { motion } from 'framer-motion'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Link } from 'react-router-dom'
-import { Zap } from 'lucide-react'
+import { Zap, AlertCircle, CheckCircle } from 'lucide-react'
 
-function UsageIndicator({ used, limit, plan }) {
+export default function UsageIndicator({
+  used,
+  limit = 5,
+  plan,
+  compact,
+  showUpgrade,
+}) {
+  const percentage = Math.min((used / limit) * 100, 100)
+  const remaining = limit - used
+
+  const getColor = () => {
+    if (used < 3) return 'green'
+    if (used < 5) return 'yellow'
+    return 'red'
+  }
+
+  const color = getColor()
+
+  const colorClasses = {
+    green: {
+      text: 'text-green-400',
+      bg: 'bg-green-500',
+      progress: 'bg-green-500',
+    },
+    yellow: {
+      text: 'text-yellow-400',
+      bg: 'bg-yellow-500',
+      progress: 'bg-yellow-500',
+    },
+    red: {
+      text: 'text-red-400',
+      bg: 'bg-red-500',
+      progress: 'bg-red-500',
+    },
+  }
+
+  const getStatusMessage = () => {
+    if (used === 0) return "You're all set! Start analyzing repos."
+    if (used <= 3) return `Going strong! ${remaining} analyses left.`
+    if (used === 4) return '⚠️ Almost at your limit! 1 analysis remaining.'
+    return '🚫 Limit reached. Upgrade for unlimited analyses.'
+  }
+
+  const getResetDays = () => {
+    const now = new Date()
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+    const daysLeft = endOfMonth.getDate() - now.getDate()
+    return daysLeft
+  }
+
+  // Pro plan - compact badge only
   if (plan === 'pro') {
-    return null
+    return (
+      <Badge className="bg-purple-600/20 text-purple-400 border border-purple-500/30">
+        <Zap className="w-3 h-3 mr-1" /> Pro — Unlimited
+      </Badge>
+    )
   }
 
-  const percentage = (used / limit) * 100
-  const limitReached = used >= limit
-
-  // Determine progress bar color class
-  let progressColorClass = ''
-  if (used < 3) {
-    progressColorClass = '[&>div]:bg-green-500'
-  } else if (used < 5) {
-    progressColorClass = '[&>div]:bg-yellow-500'
-  } else {
-    progressColorClass = '[&>div]:bg-red-500'
+  // Free plan - compact mode
+  if (plan === 'free' && compact) {
+    return (
+      <div className="flex items-center gap-2">
+        <span className={`text-sm font-medium ${colorClasses[color].text}`}>
+          {used} / {limit}
+        </span>
+        <div className="w-16 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+          <motion.div
+            className={`h-full rounded-full ${colorClasses[color].progress}`}
+            initial={{ width: 0 }}
+            animate={{ width: `${percentage}%` }}
+            transition={{ duration: 1, ease: 'easeOut', delay: 0.3 }}
+          />
+        </div>
+        {used >= 5 && <AlertCircle className="w-4 h-4 text-red-500" />}
+      </div>
+    )
   }
 
+  // Free plan - full card
   return (
     <div className="bg-gray-900 border border-white/10 rounded-xl p-4">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-sm text-gray-400">
-          <span className="text-white font-medium">{used}</span> / {limit} analyses used this month
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-sm font-medium text-gray-400">Monthly Usage</span>
+        <span className="text-xs text-gray-500">
+          Resets in {getResetDays()} days
         </span>
-        {limitReached && (
-          <Badge variant="destructive" className="bg-red-500/20 text-red-400 border-red-500/30">
-            Limit reached
-          </Badge>
-        )}
       </div>
 
-      <Progress 
-        value={percentage} 
-        className={`h-2 bg-gray-800 ${progressColorClass}`}
-      />
+      {/* Large usage display */}
+      <div className="flex items-baseline gap-1 mb-3">
+        <span className={`text-3xl font-bold ${colorClasses[color].text}`}>
+          {used}
+        </span>
+        <span className="text-gray-500 text-lg">/ {limit}</span>
+        <span className="text-gray-500 text-sm ml-1">analyses</span>
+      </div>
 
-      <div className="mt-3">
-        {limitReached ? (
-          <Button asChild className="w-full bg-purple-600 hover:bg-purple-700">
-            <Link to="/billing" className="flex items-center justify-center gap-2">
-              <Zap className="w-4 h-4" />
-              Upgrade to Pro
-            </Link>
-          </Button>
-        ) : (
-          <Link 
-            to="/billing" 
-            className="text-sm text-gray-500 hover:text-purple-400 transition-colors flex items-center gap-1"
-          >
-            <Zap className="w-3 h-3" />
-            Upgrade for unlimited
+      {/* Animated progress bar */}
+      <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden mb-3">
+        <motion.div
+          className={`h-2 rounded-full ${colorClasses[color].progress}`}
+          initial={{ width: 0 }}
+          animate={{ width: `${percentage}%` }}
+          transition={{ duration: 1, ease: 'easeOut', delay: 0.3 }}
+        />
+      </div>
+
+      {/* Status message */}
+      <p className="text-sm text-gray-400 mb-4">{getStatusMessage()}</p>
+
+      {/* Upgrade CTA */}
+      {showUpgrade && used >= 3 && (
+        <Button
+          asChild
+          className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+        >
+          <Link to="/billing">
+            <Zap className="w-4 h-4 mr-2" />
+            Upgrade to Pro
           </Link>
-        )}
-      </div>
+        </Button>
+      )}
     </div>
   )
 }
-
-export default UsageIndicator

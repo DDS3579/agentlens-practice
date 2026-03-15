@@ -1,4 +1,6 @@
+
 import { motion } from 'framer-motion'
+import { useInView } from 'react-intersection-observer'
 import { Github, Play, Bot, FileCheck, ArrowRight } from 'lucide-react'
 
 const steps = [
@@ -29,15 +31,17 @@ const steps = [
 ]
 
 function HowItWorks() {
+  const [headerRef, headerInView] = useInView({ triggerOnce: true, threshold: 0.1 })
+
   return (
     <section className="py-24 px-4 bg-gray-900/50">
       <div className="max-w-7xl mx-auto">
         {/* Section Header */}
         <motion.div
+          ref={headerRef}
           className="text-center mb-16"
           initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-100px' }}
+          animate={headerInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
           transition={{ duration: 0.5 }}
         >
           <span className="text-purple-400 text-sm font-medium tracking-widest uppercase">
@@ -54,53 +58,77 @@ function HowItWorks() {
         {/* Steps */}
         <div className="relative">
           {/* Desktop Layout */}
-          <div className="hidden md:grid md:grid-cols-4 gap-8">
+          <div className="hidden md:grid md:grid-cols-7 gap-0 items-start">
             {steps.map((step, index) => {
               const Icon = step.icon
               return (
-                <div key={step.number} className="relative">
+                <>
                   {/* Step Card */}
-                  <motion.div
-                    className="flex flex-col items-center text-center"
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: '-100px' }}
-                    transition={{ duration: 0.5, delay: index * 0.15 }}
-                  >
-                    {/* Circle with Icon */}
-                    <div className="relative">
-                      <div className="w-16 h-16 rounded-full bg-purple-600/20 border border-purple-500/50 flex items-center justify-center mb-4">
-                        <Icon className="w-7 h-7 text-purple-400" />
-                      </div>
-                      {/* Number Badge */}
-                      <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-purple-600 text-white text-xs font-bold flex items-center justify-center">
-                        {step.number}
-                      </div>
-                    </div>
-
-                    <h3 className="text-white font-semibold text-lg mb-2">
-                      {step.title}
-                    </h3>
-                    <p className="text-gray-400 text-sm">
-                      {step.description}
-                    </p>
-                  </motion.div>
-
-                  {/* Connecting Arrow */}
-                  {index < steps.length - 1 && (
+                  <div key={`step-${step.number}`} className="relative flex flex-col items-center text-center">
                     <motion.div
-                      className="absolute top-8 left-[calc(50%+2.5rem)] w-[calc(100%-1rem)] hidden md:flex items-center"
-                      initial={{ scaleX: 0 }}
-                      whileInView={{ scaleX: 1 }}
+                      className="flex flex-col items-center text-center"
+                      initial={{ opacity: 0, y: 30 }}
+                      whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true, margin: '-100px' }}
-                      transition={{ duration: 0.4, delay: 0.3 + index * 0.15 }}
-                      style={{ originX: 0 }}
+                      transition={{ duration: 0.5, delay: index * 0.15 }}
                     >
-                      <div className="flex-1 h-[2px] bg-gradient-to-r from-purple-500/50 to-purple-500/20" />
-                      <ArrowRight className="w-4 h-4 text-purple-500/50 -ml-1" />
+                      {/* Circle with Icon + Pulse */}
+                      <div className="relative">
+                        <motion.div
+                          className="rounded-full"
+                          whileInView={{
+                            boxShadow: [
+                              '0 0 0px rgba(139,92,246,0)',
+                              '0 0 20px rgba(139,92,246,0.6)',
+                              '0 0 0px rgba(139,92,246,0)'
+                            ]
+                          }}
+                          transition={{ duration: 1.5, delay: index * 0.3, repeat: 2 }}
+                          viewport={{ once: true }}
+                        >
+                          <div className="w-16 h-16 rounded-full bg-purple-600/20 border border-purple-500/50 flex items-center justify-center mb-4">
+                            <Icon className="w-7 h-7 text-purple-400" />
+                          </div>
+                        </motion.div>
+                        {/* Number Badge */}
+                        <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-purple-600 text-white text-xs font-bold flex items-center justify-center">
+                          {step.number}
+                        </div>
+                      </div>
+
+                      <h3 className="text-white font-semibold text-lg mb-2">
+                        {step.title}
+                      </h3>
+                      <p className="text-gray-400 text-sm">
+                        {step.description}
+                      </p>
                     </motion.div>
+                  </div>
+
+                  {/* Connecting Line Between Steps */}
+                  {index < steps.length - 1 && (
+                    <div
+                      key={`line-${step.number}`}
+                      className="hidden md:flex items-center flex-1 mx-2 pt-8"
+                    >
+                      <motion.div
+                        className="h-px bg-gradient-to-r from-purple-500 to-violet-500 w-full"
+                        initial={{ scaleX: 0, originX: 0 }}
+                        whileInView={{ scaleX: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6, delay: index * 0.3 + 0.4 }}
+                        style={{ originX: 0 }}
+                      />
+                      <motion.div
+                        className="w-2 h-2 rounded-full bg-purple-500 flex-shrink-0"
+                        initial={{ scale: 0 }}
+                        whileInView={{ scale: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.3, delay: index * 0.3 + 0.9 }}
+                      />
+                    </div>
                   )}
-                </div>
+                </>
               )
             })}
           </div>
@@ -121,9 +149,22 @@ function HowItWorks() {
                   {/* Left Side - Icon & Line */}
                   <div className="flex flex-col items-center">
                     <div className="relative">
-                      <div className="w-14 h-14 rounded-full bg-purple-600/20 border border-purple-500/50 flex items-center justify-center">
-                        <Icon className="w-6 h-6 text-purple-400" />
-                      </div>
+                      <motion.div
+                        className="rounded-full"
+                        whileInView={{
+                          boxShadow: [
+                            '0 0 0px rgba(139,92,246,0)',
+                            '0 0 20px rgba(139,92,246,0.6)',
+                            '0 0 0px rgba(139,92,246,0)'
+                          ]
+                        }}
+                        transition={{ duration: 1.5, delay: index * 0.3, repeat: 2 }}
+                        viewport={{ once: true }}
+                      >
+                        <div className="w-14 h-14 rounded-full bg-purple-600/20 border border-purple-500/50 flex items-center justify-center">
+                          <Icon className="w-6 h-6 text-purple-400" />
+                        </div>
+                      </motion.div>
                       <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-purple-600 text-white text-xs font-bold flex items-center justify-center">
                         {step.number}
                       </div>
@@ -155,9 +196,51 @@ function HowItWorks() {
           </div>
         </div>
 
+        {/* Live Agent Network */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mt-16 bg-gray-900 border border-white/10 rounded-2xl p-8 max-w-2xl mx-auto"
+        >
+          <p className="text-center text-gray-400 text-sm mb-6">Live Agent Network</p>
+          <svg viewBox="0 0 400 200" className="w-full">
+            {/* Center node — Coordinator */}
+            <motion.circle
+              cx="200" cy="100" r="30"
+              fill="rgba(139,92,246,0.2)"
+              stroke="#8b5cf6"
+              strokeWidth="2"
+              animate={{ r: [30, 33, 30] }}
+              transition={{ repeat: Infinity, duration: 2 }}
+            />
+            <text x="200" y="105" textAnchor="middle" fill="white" fontSize="10">Coord</text>
+
+            {/* 4 agent nodes */}
+            {[
+              { cx: 60, cy: 50, label: 'Security', color: '#ef4444' },
+              { cx: 340, cy: 50, label: 'Writer', color: '#3b82f6' },
+              { cx: 60, cy: 150, label: 'Architect', color: '#22c55e' },
+              { cx: 340, cy: 150, label: 'Memory', color: '#f59e0b' },
+            ].map((node, i) => (
+              <g key={i}>
+                <motion.line
+                  x1="200" y1="100" x2={node.cx} y2={node.cy}
+                  stroke={node.color} strokeWidth="1.5" strokeOpacity="0.4"
+                  strokeDasharray="4 2"
+                  animate={{ strokeOpacity: [0.2, 0.6, 0.2] }}
+                  transition={{ repeat: Infinity, duration: 2, delay: i * 0.4 }}
+                />
+                <circle cx={node.cx} cy={node.cy} r="22" fill={`${node.color}22`} stroke={node.color} strokeWidth="1.5" />
+                <text x={node.cx} y={node.cy + 4} textAnchor="middle" fill="white" fontSize="8">{node.label}</text>
+              </g>
+            ))}
+          </svg>
+        </motion.div>
+
         {/* Agent Graph Mockup */}
         <motion.div
-          className="mt-20 flex justify-center"
+          className="mt-12 flex justify-center"
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-100px' }}
@@ -180,6 +263,7 @@ function HowItWorks() {
                 x2="80" y2="60"
                 stroke="url(#purpleGradient)"
                 strokeWidth="2"
+                strokeDasharray="4 2"
                 initial={{ pathLength: 0 }}
                 whileInView={{ pathLength: 1 }}
                 viewport={{ once: true }}
@@ -190,6 +274,7 @@ function HowItWorks() {
                 x2="320" y2="60"
                 stroke="url(#purpleGradient)"
                 strokeWidth="2"
+                strokeDasharray="4 2"
                 initial={{ pathLength: 0 }}
                 whileInView={{ pathLength: 1 }}
                 viewport={{ once: true }}
@@ -200,6 +285,7 @@ function HowItWorks() {
                 x2="80" y2="240"
                 stroke="url(#purpleGradient)"
                 strokeWidth="2"
+                strokeDasharray="4 2"
                 initial={{ pathLength: 0 }}
                 whileInView={{ pathLength: 1 }}
                 viewport={{ once: true }}
@@ -210,6 +296,7 @@ function HowItWorks() {
                 x2="320" y2="240"
                 stroke="url(#purpleGradient)"
                 strokeWidth="2"
+                strokeDasharray="4 2"
                 initial={{ pathLength: 0 }}
                 whileInView={{ pathLength: 1 }}
                 viewport={{ once: true }}
@@ -231,7 +318,14 @@ function HowItWorks() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: 0.3 }}
               >
-                <circle cx="200" cy="150" r="35" fill="#1a1a2e" stroke="#8b5cf6" strokeWidth="2" />
+                <motion.circle
+                  cx="200" cy="150" r="35"
+                  fill="#1a1a2e"
+                  stroke="#8b5cf6"
+                  strokeWidth="2"
+                  animate={{ r: [35, 38, 35] }}
+                  transition={{ repeat: Infinity, duration: 2 }}
+                />
                 <text x="200" y="145" textAnchor="middle" fill="#8b5cf6" fontSize="10" fontWeight="600">
                   Coordinator
                 </text>

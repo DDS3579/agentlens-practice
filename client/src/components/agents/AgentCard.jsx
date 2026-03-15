@@ -1,19 +1,29 @@
-export default function AgentCard({ agentName, agent }) {
-  // Safety check - render nothing or placeholder if agent is undefined
-  if (!agent) {
-    return (
-      <div className="bg-[#1a1d2e] border border-[#2d3748] rounded-[10px] p-4">
-        <div className="flex items-center gap-2">
-          <span className="text-xl">🤖</span>
-          <span className="font-semibold text-gray-400">
-            {agentName || "Unknown Agent"}
-          </span>
-        </div>
-        <p className="text-sm text-gray-500 mt-2">Waiting for agent data...</p>
-      </div>
-    );
-  }
-  const { status, currentAction, findings } = agent;
+import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+export default function AgentCard({ agentName, agent, name, icon: IconComponent, status: propStatus, color }) {
+  // Support both prop shapes:
+  // Old: { agentName, agent: { status, currentAction, findings } }
+  // New: { name, icon, status, color }
+  const resolvedName = agentName || name?.toLowerCase() || 'unknown';
+  const resolvedStatus = agent?.status || propStatus || 'idle';
+  const currentAction = agent?.currentAction || null;
+  const findings = agent?.findings || 0;
+
+  const [showCompleteFlash, setShowCompleteFlash] = useState(false);
+
+  // Watch for status change to 'complete' for green flash effect
+  useEffect(() => {
+    if (resolvedStatus === 'complete') {
+      setShowCompleteFlash(true);
+      const timer = setTimeout(() => {
+        setShowCompleteFlash(false);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resolvedStatus]);
+
+  const status = resolvedStatus;
 
   const agentConfig = {
     coordinator: { emoji: "🧠", displayName: "Coordinator" },
@@ -22,9 +32,9 @@ export default function AgentCard({ agentName, agent }) {
     architecture: { emoji: "🏗️", displayName: "Architecture Review" },
   };
 
-  const { emoji, displayName } = agentConfig[agentName] || {
+  const { emoji, displayName } = agentConfig[resolvedName] || {
     emoji: "🤖",
-    displayName: agentName,
+    displayName: name || resolvedName,
   };
 
   const getStatusBadge = () => {
@@ -102,19 +112,47 @@ export default function AgentCard({ agentName, agent }) {
     }
   };
 
+  const isRunning = status === 'thinking' || status === 'acting';
+
+  const getBoxShadow = () => {
+    if (showCompleteFlash) {
+      return '0 0 25px rgba(34, 197, 94, 0.6)';
+    }
+    if (isRunning) {
+      return '0 0 20px rgba(139, 92, 246, 0.4)';
+    }
+    return '0 0 0px rgba(139, 92, 246, 0)';
+  };
+
   const statusBadge = getStatusBadge();
   const statsText = getStatsText();
   const showProgressBar = status === "thinking" || status === "acting";
 
   return (
-    <div
-      className={`bg-[#1a1d2e] border ${getBorderColor()} rounded-[10px] p-4 transition-all duration-300 overflow-hidden`}
+    <motion.div
+      layout
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{
+        opacity: 1,
+        scale: 1,
+        boxShadow: getBoxShadow()
+      }}
+      transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+      whileHover={{ y: -2 }}
+      className={`bg-[#1a1d2e] border ${getBorderColor()} rounded-[10px] p-4 transition-colors duration-300 overflow-hidden`}
     >
       {/* Header Row */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <span className="text-xl">{emoji}</span>
           <span className="font-semibold text-white">{displayName}</span>
+          {isRunning && (
+            <motion.span
+              animate={{ scale: [1, 1.3, 1], opacity: [1, 0.5, 1] }}
+              transition={{ repeat: Infinity, duration: 1.5 }}
+              className="w-2 h-2 rounded-full bg-purple-500 inline-block"
+            />
+          )}
         </div>
         <span
           className={`px-2.5 py-1 rounded-full text-xs font-medium ${statusBadge.classes}`}
@@ -124,53 +162,61 @@ export default function AgentCard({ agentName, agent }) {
       </div>
 
       {/* Current Action */}
-      {currentAction && (
-        <p
-          className="text-sm text-[#94a3b8] truncate mb-2 animate-[fadeIn_0.3s_ease-in-out]"
-          title={currentAction}
-        >
-          {currentAction}
-        </p>
-      )}
+      <AnimatePresence mode="wait">
+        {currentAction && (
+          <motion.p
+            key={currentAction}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="text-sm text-[#94a3b8] truncate mb-2"
+            title={currentAction}
+          >
+            {currentAction}
+          </motion.p>
+        )}
+      </AnimatePresence>
 
       {/* Stats Row */}
-      {statsText && (
-        <div className="text-xs text-gray-400 mb-2">{statsText}</div>
-      )}
+      <AnimatePresence>
+        {statsText && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="text-xs text-gray-400 mb-2"
+          >
+            {statsText}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Progress Bar */}
-      {showProgressBar && (
-        <div className="h-1 bg-[#0f1117] rounded-full overflow-hidden mt-3">
-          <div
-            className={`h-full w-1/3 ${getProgressBarColor()} rounded-full animate-[slideIndeterminate_1.5s_ease-in-out_infinite]`}
-          />
-        </div>
-      )}
-
-      <style>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(-4px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        @keyframes slideIndeterminate {
-          0% {
-            transform: translateX(-100%);
-          }
-          50% {
-            transform: translateX(200%);
-          }
-          100% {
-            transform: translateX(-100%);
-          }
-        }
-      `}</style>
-    </div>
+      <AnimatePresence>
+        {showProgressBar && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mt-3"
+          >
+            <div className="h-1 bg-[#0f1117] rounded-full overflow-hidden">
+              <motion.div
+                className={`h-full w-1/3 ${getProgressBarColor()} rounded-full`}
+                animate={{
+                  x: ['-100%', '300%']
+                }}
+                transition={{
+                  repeat: Infinity,
+                  duration: 1.5,
+                  ease: 'easeInOut'
+                }}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }

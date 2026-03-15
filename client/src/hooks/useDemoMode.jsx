@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback, useRef, useState } from 'react';
 import useAgentStore from '../store/agentStore.js';
-import { DEMO_RESULTS, DEMO_EVENTS } from '../lib/demodata.js';
+import { DEMO_RESULTS, DEMO_EVENTS } from '../lib/demoData.js';
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -11,120 +11,8 @@ const useDemoMode = () => {
   const [showToast, setShowToast] = useState(false);
   const isRunningRef = useRef(false);
   
-  const {
-    reset,
-    setRepoUrl,
-    setIsAnalyzing,
-    setPipelinePhase,
-    setPipelineMessage,
-    setRepoSummary,
-    setSessionId,
-    setPlan,
-    addBug,
-    setSecuritySummary,
-    setDocumentation,
-    setDocumentationMeta,
-    addRefactor,
-    setArchitectureResult,
-    setCompilationResult,
-    addAgentMessage,
-    updateAgentStatus,
-    setFinalResults
-  } = useAgentStore();
-
-  const handleSSEEvent = useCallback((eventName, data) => {
-    switch (eventName) {
-      case 'pipeline_start':
-        setIsAnalyzing(true);
-        break;
-        
-      case 'pipeline_phase':
-        setPipelinePhase(data.phase);
-        setPipelineMessage(data.message);
-        break;
-        
-      case 'repo_ready':
-        setRepoSummary(data);
-        break;
-        
-      case 'session_created':
-        setSessionId(data.sessionId);
-        break;
-        
-      case 'coordinator_plan':
-        setPlan(data);
-        break;
-        
-      case 'agent_status':
-        updateAgentStatus(data.agentId, data.status, data.message);
-        break;
-        
-      case 'agent_finding':
-        addBug(data.finding);
-        break;
-        
-      case 'agent_refactor':
-        addRefactor(data.refactor);
-        break;
-        
-      case 'agent_communication':
-        addAgentMessage(data);
-        break;
-        
-      case 'security_complete':
-        setSecuritySummary(data.summary);
-        break;
-        
-      case 'documentation_complete':
-        setDocumentation(data.documentation);
-        setDocumentationMeta(data.meta);
-        break;
-        
-      case 'architecture_complete':
-        setArchitectureResult(data.result);
-        break;
-        
-      case 'compilation_complete':
-        setCompilationResult(data);
-        break;
-        
-      case 'session_status':
-        if (data.status === 'complete') {
-          setPipelinePhase('complete');
-        }
-        break;
-        
-      case 'analysis_complete':
-        setIsAnalyzing(false);
-        break;
-        
-      case 'final_results':
-        setFinalResults(data);
-        setPipelinePhase('complete');
-        setIsAnalyzing(false);
-        break;
-        
-      default:
-        console.log('Unhandled demo event:', eventName, data);
-    }
-  }, [
-    setIsAnalyzing,
-    setPipelinePhase,
-    setPipelineMessage,
-    setRepoSummary,
-    setSessionId,
-    setPlan,
-    updateAgentStatus,
-    addBug,
-    addRefactor,
-    addAgentMessage,
-    setSecuritySummary,
-    setDocumentation,
-    setDocumentationMeta,
-    setArchitectureResult,
-    setCompilationResult,
-    setFinalResults
-  ]);
+  // Use V2 store API — route all events through handleSSEEvent
+  const { reset, setRepoUrl, handleSSEEvent } = useAgentStore();
 
   const startDemoMode = useCallback(async () => {
     if (isRunningRef.current) {
@@ -145,7 +33,7 @@ const useDemoMode = () => {
     // Set repo URL
     setRepoUrl('https://github.com/demo-user/vulnerable-express-api');
     
-    // Replay events with delays
+    // Replay events with delays — route through V2 handleSSEEvent
     for (const event of DEMO_EVENTS) {
       if (!isRunningRef.current) break;
       
