@@ -415,7 +415,9 @@ const Hero = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (repoUrl.trim()) {
-      navigate(`/dashboard?repo=${encodeURIComponent(repoUrl.trim())}`);
+      navigate(`/login?repo=${encodeURIComponent(repoUrl.trim())}`);
+    } else {
+      navigate('/login');
     }
   };
 
