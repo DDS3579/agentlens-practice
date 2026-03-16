@@ -71,7 +71,7 @@ export default function UsageIndicator({
         <span className={`text-sm font-medium ${colorClasses[color].text}`}>
           {used} / {limit}
         </span>
-        <div className="w-16 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+        <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
           <motion.div
             className={`h-full rounded-full ${colorClasses[color].progress}`}
             initial={{ width: 0 }}
@@ -86,11 +86,11 @@ export default function UsageIndicator({
 
   // Free plan - full card
   return (
-    <div className="bg-gray-900 border border-white/10 rounded-xl p-4">
+    <div className="bg-card border border-border/50 rounded-xl p-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-medium text-gray-400">Monthly Usage</span>
-        <span className="text-xs text-gray-500">
+        <span className="text-sm font-medium text-muted-foreground">Monthly Usage</span>
+        <span className="text-xs text-muted-foreground/60">
           Resets in {getResetDays()} days
         </span>
       </div>
@@ -100,12 +100,12 @@ export default function UsageIndicator({
         <span className={`text-3xl font-bold ${colorClasses[color].text}`}>
           {used}
         </span>
-        <span className="text-gray-500 text-lg">/ {limit}</span>
-        <span className="text-gray-500 text-sm ml-1">analyses</span>
+        <span className="text-muted-foreground text-lg">/ {limit}</span>
+        <span className="text-muted-foreground text-sm ml-1">analyses</span>
       </div>
 
       {/* Animated progress bar */}
-      <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden mb-3">
+      <div className="w-full h-2 bg-muted rounded-full overflow-hidden mb-3">
         <motion.div
           className={`h-2 rounded-full ${colorClasses[color].progress}`}
           initial={{ width: 0 }}
@@ -115,7 +115,7 @@ export default function UsageIndicator({
       </div>
 
       {/* Status message */}
-      <p className="text-sm text-gray-400 mb-4">{getStatusMessage()}</p>
+      <p className="text-sm text-muted-foreground mb-4">{getStatusMessage()}</p>
 
       {/* Upgrade CTA */}
       {showUpgrade && used >= 3 && (

@@ -1,87 +1,119 @@
 // client/src/hooks/useAgentStream.js
-// This is the key update to handle concurrent agent updates
+import { useCallback, useRef } from 'react';
+import useAgentStore from '../store/agentStore.js';
+import useAuth from './useAuth.js';
+import { apiFetch } from '../lib/apiClient.js';
 
-import { useEffect, useRef } from 'react';
-import useAgentStore from '../store/agentStore';
-
-export function useAgentStream(sessionId) {
+export function useAgentStream() {
+  const abortRef = useRef(null);
   const handleSSEEvent = useAgentStore((state) => state.handleSSEEvent);
-  const eventSourceRef = useRef(null);
+  const startAnalysisState = useAgentStore((state) => state.startAnalysis);
+  const { getToken } = useAuth();
 
-  useEffect(() => {
-    if (!sessionId) return;
+  const parseSSEEvents = useCallback((text) => {
+    const events = [];
+    const parts = text.split('\n\n');
 
-    const url = `/api/analysis/stream?sessionId=${encodeURIComponent(sessionId)}`;
-    console.log('[useAgentStream] Connecting to:', url);
+    for (const part of parts) {
+      if (!part.trim()) continue;
 
-    const eventSource = new EventSource(url);
-    eventSourceRef.current = eventSource;
+      const lines = part.split('\n');
+      let eventName = 'message';
+      let eventData = null;
 
-    // Handle all event types
-    const eventTypes = [
-      'connected',
-      'pipeline_start',
-      'repo_ready',
-      'session_created',
-      'agent_status',
-      'agent_update',      // New: for parallel agent updates
-      'phase_complete',    // New: for phase completion events
-      'coordinator_plan',
-      'agent_finding',
-      'agent_communication',
-      'session_status',
-      'analysis_complete',
-      'pipeline_complete', // New: for full pipeline completion
-      'final_results',
-      'session_error',
-      'error',
-      'memory_update',
-      'fix_start',
-      'fix_complete',
-      'fix_failed',
-      'fix_stream',
-      'token_usage', // New: for LLM token usage tracking
-    ];
-
-    eventTypes.forEach((eventType) => {
-      eventSource.addEventListener(eventType, (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          console.log(`[useAgentStream] ${eventType}:`, data);
-          
-          // Pass to store handler - it now supports concurrent agent updates
-          handleSSEEvent(eventType, data);
-        } catch (err) {
-          console.error(`[useAgentStream] Error parsing ${eventType}:`, err);
+      for (const line of lines) {
+        if (line.startsWith('event:')) {
+          eventName = line.slice(6).trim();
+        } else if (line.startsWith('data:')) {
+          const dataStr = line.slice(5).trim();
+          try {
+            eventData = JSON.parse(dataStr);
+          } catch (e) {
+            eventData = dataStr;
+          }
         }
-      });
-    });
-
-    // Generic message handler for any unlisted events
-    eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        console.log('[useAgentStream] Generic message:', data);
-        handleSSEEvent('message', data);
-      } catch (err) {
-        // Ignore non-JSON messages (keepalive, etc.)
       }
-    };
 
-    eventSource.onerror = (error) => {
-      console.error('[useAgentStream] Connection error:', error);
-      handleSSEEvent('error', { error: 'Connection lost' });
-    };
-
-    return () => {
-      console.log('[useAgentStream] Disconnecting');
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
+      if (eventData !== null) {
+        events.push({ event: eventName, data: eventData });
       }
-    };
-  }, [sessionId, handleSSEEvent]);
+    }
 
-  return eventSourceRef;
+    return events;
+  }, []);
+
+  const processStream = useCallback(async (response) => {
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) {
+          if (buffer.trim()) {
+            const events = parseSSEEvents(buffer);
+            for (const { event, data } of events) {
+              handleSSEEvent(event, data);
+            }
+          }
+          break;
+        }
+
+        buffer += decoder.decode(value, { stream: true });
+
+        const lastDoubleNewline = buffer.lastIndexOf('\n\n');
+        if (lastDoubleNewline !== -1) {
+          const completeEvents = buffer.slice(0, lastDoubleNewline + 2);
+          buffer = buffer.slice(lastDoubleNewline + 2);
+
+          const events = parseSSEEvents(completeEvents);
+          for (const { event, data } of events) {
+            handleSSEEvent(event, data);
+          }
+        }
+      }
+    } catch (error) {
+      if (error.name === 'AbortError') return;
+      handleSSEEvent('session_error', { message: error.message });
+    }
+  }, [parseSSEEvents, handleSSEEvent]);
+
+  const startAnalysis = useCallback(async (url, selectedPaths = []) => {
+    try {
+      const token = await getToken();
+      abortRef.current = new AbortController();
+
+      startAnalysisState(); // Updates UI state to "connecting"
+
+      const response = await apiFetch('/api/analyze', {
+        method: 'POST',
+        body: JSON.stringify({ url, selectedPaths }),
+        signal: abortRef.current.signal
+      }, token);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error: ${response.status}`);
+      }
+
+      await processStream(response);
+
+    } catch (error) {
+      if (error.name === 'AbortError') return;
+      handleSSEEvent('error', { error: error.message || 'Analysis failed' });
+    }
+  }, [getToken, startAnalysisState, processStream, handleSSEEvent]);
+
+  const cancelAnalysis = useCallback(() => {
+    if (abortRef.current) {
+      abortRef.current.abort();
+      abortRef.current = null;
+    }
+    useAgentStore.getState().set({ isAnalyzing: false, currentPhase: 'idle' });
+  }, []);
+
+  return { startAnalysis, cancelAnalysis };
 }
 
 export default useAgentStream;

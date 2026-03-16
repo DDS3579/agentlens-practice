@@ -395,16 +395,9 @@ const useFixStore = create((set, get) => ({
   clearFixEdits: () => {
     set({ fixAgentEdits: [] });
   },
-
-  /**
-   * Clear all custom agent edits (if not already present)
-   */
-  // clearCustomEdits should already exist from Step 7
-  // If not, add:
-  clearCustomEdits: () => {
-    set({ customAgentEdits: [] });
-  },
 }));
+
+
 
 
 

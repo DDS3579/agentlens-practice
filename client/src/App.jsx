@@ -121,12 +121,7 @@ function PageBreadcrumb() {
 function TopBar() {
   return (
     <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-4 border-b border-border bg-background/80 px-4 backdrop-blur-sm">
-      <SidebarTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
-          <PanelLeft className="h-4 w-4" />
-          <span className="sr-only">Toggle Sidebar</span>
-        </Button>
-      </SidebarTrigger>
+      <SidebarTrigger className="-ml-1" />
 
       <Separator orientation="vertical" className="h-6" />
 
@@ -183,6 +178,8 @@ function ProtectedRoute({ children }) {
   )
 }
 
+import { TooltipProvider } from '@/components/ui/tooltip'
+
 function App() {
   const location = useLocation()
 
@@ -211,7 +208,8 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <AnimatePresence mode="wait">
+      <TooltipProvider>
+        <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           {/* ============ PUBLIC ROUTES (No Sidebar) ============ */}
           
@@ -308,7 +306,8 @@ function App() {
           {/* ============ FALLBACK ============ */}
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
-      </AnimatePresence>
+        </AnimatePresence>
+      </TooltipProvider>
     </ErrorBoundary>
   )
 }

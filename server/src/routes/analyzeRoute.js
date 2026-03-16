@@ -56,7 +56,7 @@ router.post('/', optionalAuth, syncUser, attachLLMConfig, async (req, res) => {
       cleanup = createSSEStream(res, memory)
     }
 
-    const results = await runAnalysisPipeline(files, repoSummary, onSession, req.userLLMConfig)
+    const results = await runAnalysisPipeline(files, repoSummary, onSession, req.llmConfig, res)
 
     // Step 6 — Send final_results event
     sendSSEEvent(res, 'final_results', results)

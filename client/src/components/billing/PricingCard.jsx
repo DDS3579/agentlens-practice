@@ -47,8 +47,8 @@ const PricingCard = ({
       className={cn(
         'relative rounded-2xl p-8',
         isPro
-          ? 'bg-gradient-to-b from-purple-950/40 to-gray-900 border-2 border-purple-500 hover:glow-purple'
-          : 'bg-gray-900 border border-white/10',
+          ? 'bg-gradient-to-b from-violet-950/40 to-card border-2 border-violet-500'
+          : 'bg-card border border-border/50',
         className
       )}
       variants={cardVariants}
@@ -85,22 +85,22 @@ const PricingCard = ({
         ) : (
           <Zap className="w-8 h-8 text-gray-400" />
         )}
-        <h3 className="text-2xl font-semibold text-white">{title}</h3>
+        <h3 className="text-2xl font-semibold text-foreground">{title}</h3>
       </div>
 
       {/* Price block */}
       <div className="mb-6">
         <div className="flex items-baseline gap-1">
-          <span className="text-5xl font-bold font-display text-white">
+          <span className="text-5xl font-bold font-display text-foreground">
             {price}
           </span>
-          <span className="text-gray-400">{period}</span>
+          <span className="text-muted-foreground">{period}</span>
         </div>
-        <p className="text-gray-400 mt-2">{subtitle}</p>
+        <p className="text-muted-foreground mt-2">{subtitle}</p>
       </div>
 
       {/* Separator */}
-      <div className="border-t border-white/10 mb-6" />
+      <div className="border-t border-border/50 mb-6" />
 
       {/* Features list */}
       <ul className="space-y-4 mb-8">
@@ -123,9 +123,9 @@ const PricingCard = ({
               className={cn(
                 feature.included
                   ? feature.highlight
-                    ? 'text-purple-400 font-bold'
-                    : 'text-gray-300'
-                  : 'text-gray-600 line-through'
+                    ? 'text-violet-400 font-bold'
+                    : 'text-foreground/80'
+                  : 'text-muted-foreground/60 line-through'
               )}
             >
               {feature.text}

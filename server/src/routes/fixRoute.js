@@ -4,8 +4,11 @@ import { Router } from 'express';
 import { requireAuth, syncUser } from '../middleware/auth.js';
 import { requirePro, attachUser } from '../middleware/planCheck.js';
 import { fixSingleBug, fixAllBugs, groupBugsByFile } from '../agents/fixAgent.js';
+import { runCustomAgent } from '../agents/customAgent.js';
+import { getSession } from '../memory/sharedMemory.js';
 import { getAnalysisById } from '../db/analysisService.js';
 import { getUserApiKeys } from '../db/userService.js';
+import { setupSSEHeaders, sendSSEEvent } from '../streaming/sseEmitter.js';
 
 const router = Router();
 
@@ -216,6 +219,78 @@ router.post(
         error: error.message || 'An unexpected error occurred' 
       });
       res.end();
+    }
+  }
+);
+
+/**
+ * POST /custom
+ * Run custom agent on-demand with SSE streaming
+ */
+router.post(
+  '/custom',
+  requireAuth,
+  syncUser,
+  attachUser,
+  requirePro,
+  async (req, res) => {
+    setupSSEHeaders(res);
+
+    try {
+      const { sessionId, customPrompt, repoData } = req.body;
+
+      if (!customPrompt) {
+        sendSSEEvent(res, 'error', { error: 'Custom prompt is required' });
+        res.end();
+        return;
+      }
+
+      // Try to get session from shared memory
+      const memory = sessionId ? getSession(sessionId) : null;
+
+      // Get analysis results from memory or request body
+      const plan = memory?.get('plan') || req.body.plan || null;
+      const archResult = memory?.get('architectureResult') || req.body.archResult || null;
+      const secResult = memory?.get('securitySummary') || req.body.secResult || null;
+
+      // Get user's LLM config
+      const userLLMConfig = await getUserLLMConfig(req.auth.userId);
+
+      // Build repoData from memory or request body
+      const finalRepoData = repoData || {
+        files: memory?.get('files') || [],
+        repoSummary: memory?.get('repoSummary') || {},
+      };
+
+      sendSSEEvent(res, 'custom_agent_start', {
+        message: 'Custom agent starting...',
+        prompt: customPrompt.substring(0, 100),
+      });
+
+      const result = await runCustomAgent(
+        finalRepoData,
+        plan,
+        archResult,
+        secResult,
+        customPrompt,
+        userLLMConfig,
+        res,
+        sessionId,
+      );
+
+      sendSSEEvent(res, 'custom_agent_complete', {
+        edits: result?.edits || [],
+        summary: result?.summary || 'Custom agent complete',
+      });
+
+      res.end();
+    } catch (error) {
+      sendSSEEvent(res, 'error', {
+        error: error.message || 'Custom agent failed',
+      });
+      if (!res.writableEnded) {
+        res.end();
+      }
     }
   }
 );

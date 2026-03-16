@@ -10,6 +10,7 @@ import {
   Shield, FileText, GitBranch, Cpu
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import useAuthStore from '../../store/authStore'
 
 export default function UpgradeModal({
   isOpen,
@@ -21,6 +22,7 @@ export default function UpgradeModal({
   const [copied, setCopied] = useState(false)
 
   const userEmail = 'user@example.com' // In real app, get from auth context
+  const setIsPro = useAuthStore(state => state.setIsPro)
 
   const freeFeatures = [
     { icon: GitBranch, text: '5 analyses per month' },
@@ -51,6 +53,12 @@ export default function UpgradeModal({
   const handleClose = () => {
     setView('info')
     onClose()
+  }
+
+  const handleUpgradeClick = () => {
+    // Development hack: auto upgrade
+    setIsPro(true)
+    handleClose()
   }
 
   return (
@@ -138,11 +146,11 @@ export default function UpgradeModal({
               {/* Buttons */}
               <div className="flex flex-col gap-2">
                 <Button
-                  onClick={() => setView('contact')}
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                  onClick={handleUpgradeClick}
+                  className="w-full bg-violet-600 hover:bg-violet-700 text-white"
                 >
-                  <Mail className="w-4 h-4 mr-2" />
-                  Contact Us to Upgrade
+                  <Zap className="w-4 h-4 mr-2" />
+                  Upgrade to Pro (Instant)
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
                 <Button

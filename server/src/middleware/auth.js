@@ -1,4 +1,4 @@
-import { createClerkClient } from "@clerk/backend";
+import { createClerkClient, verifyToken } from "@clerk/backend";
 import { upsertUser } from "../db/userService.js";
 import { getUserApiKeys } from "../db/userService.js";
 import { decrypt } from "../utils/Encryption.js";
@@ -26,7 +26,9 @@ export const requireAuth = async (req, res, next) => {
   const token = authHeader.replace("Bearer ", "");
 
   try {
-    const payload = await clerkClient.verifyToken(token);
+    const payload = await verifyToken(token, {
+      secretKey: process.env.CLERK_SECRET_KEY,
+    });
 
     req.auth = {
       userId: payload.sub,
@@ -65,7 +67,9 @@ export const optionalAuth = async (req, res, next) => {
   const token = authHeader.replace("Bearer ", "");
 
   try {
-    const payload = await clerkClient.verifyToken(token);
+    const payload = await verifyToken(token, {
+      secretKey: process.env.CLERK_SECRET_KEY,
+    });
     req.auth = {
       userId: payload.sub,
       sessionClaims: payload,

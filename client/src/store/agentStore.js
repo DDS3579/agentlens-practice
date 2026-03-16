@@ -73,6 +73,11 @@ const initialState = {
   startTime: null,
   endTime: null,
 
+  // ============================================
+  // Current Repo URL
+  // ============================================
+  currentRepoUrl: '',
+
   // Token Usage Tracking
   tokenUsage: {
     prompt: 0,
@@ -319,7 +324,10 @@ const useAgentStore = create((set, get) => ({
   setRepoUrl: (url) =>
     set((state) => ({
       repoInfo: { ...(state.repoInfo || {}), url, repoUrl: url },
+      currentRepoUrl: url,
     })),
+
+  setCurrentRepoUrl: (url) => set({ currentRepoUrl: url }),
 
   startAnalysis: () => {
     get().resetPipeline();

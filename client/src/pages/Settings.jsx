@@ -18,7 +18,8 @@ import { FadeIn } from '../components/ui/AnimatedPage.jsx'
 import ProviderSelector from '../components/settings/ProviderSelector.jsx'
 
 export default function Settings() {
-  const { user, getToken, isProUser } = useAuth()
+  const { user, getToken, isPro } = useAuth()
+  const setIsPro = useAuthStore(state => state.setIsPro)
   
   const [llmConfigs, setLlmConfigs] = useState({
     ollama: { url: '', model: '', status: 'unconfigured' },
@@ -192,25 +193,25 @@ export default function Settings() {
       )
     }
     return (
-      <div className="flex items-center gap-2 text-gray-400 text-sm">
-        <div className="w-2 h-2 rounded-full bg-gray-400" />
+      <div className="flex items-center gap-2 text-muted-foreground text-sm">
+        <div className="w-2 h-2 rounded-full bg-muted-foreground" />
         Not configured
       </div>
     )
   }
 
   const ProGate = ({ children }) => {
-    if (isProUser) return children
+    if (isPro) return children
     
     return (
       <div className="relative">
         <div className="blur-sm pointer-events-none">
           {children}
         </div>
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900/80 rounded-lg">
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-card/90 rounded-lg">
           <Lock className="w-8 h-8 text-violet-400 mb-2" />
-          <p className="text-white font-medium mb-2">Pro Feature</p>
-          <Button size="sm" className="bg-violet-600 hover:bg-violet-700">
+          <p className="text-foreground font-medium mb-2">Pro Feature</p>
+          <Button size="sm" className="bg-violet-600 hover:bg-violet-700" onClick={() => setIsPro(true)}>
             Upgrade to Pro
           </Button>
         </div>
@@ -219,17 +220,17 @@ export default function Settings() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 pt-20 px-4 pb-12">
+    <div className="min-h-[calc(100vh-3.5rem)] p-6 lg:p-8">
       <div className="max-w-5xl mx-auto">
         <FadeIn>
           {/* Page Header */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <SettingsIcon className="w-8 h-8 text-violet-400" />
-              <h1 className="text-3xl font-bold text-white">Settings</h1>
+              <h1 className="text-3xl font-bold font-display text-foreground">Settings</h1>
             </div>
-            <Badge variant="outline" className={isProUser ? 'border-violet-500 text-violet-400' : 'border-gray-500 text-gray-400'}>
-              {isProUser ? 'Pro Plan' : 'Free Plan'}
+            <Badge variant="outline" className={isPro ? 'border-violet-500 text-violet-400' : 'border-border text-muted-foreground'}>
+              {isPro ? 'Pro Plan' : 'Free Plan'}
             </Badge>
           </div>
 
@@ -240,7 +241,7 @@ export default function Settings() {
 
           {/* Model Configuration */}
           <div className="mb-8">
-            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
               <Cpu className="w-5 h-5 text-violet-400" />
               Model Configuration
             </h2>
@@ -249,7 +250,7 @@ export default function Settings() {
 
           {/* Tabs */}
           <Tabs defaultValue="account" className="space-y-6">
-            <TabsList className="bg-gray-900 border border-gray-800">
+            <TabsList className="bg-card border border-border/50">
               <TabsTrigger value="account" className="data-[state=active]:bg-violet-600">
                 Account
               </TabsTrigger>
@@ -268,9 +269,9 @@ export default function Settings() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <Card className="bg-gray-900 border-gray-800">
+                  <Card className="border-border/50 h-full">
                   <CardHeader>
-                    <CardTitle className="text-white">Account Settings</CardTitle>
+                    <CardTitle className="text-foreground">Account Settings</CardTitle>
                     <CardDescription>Manage your profile and account preferences</CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -309,7 +310,7 @@ export default function Settings() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Cpu className="w-5 h-5 text-green-400" />
-                          <CardTitle className="text-white">Ollama (Local)</CardTitle>
+                          <CardTitle className="text-foreground">Ollama (Local)</CardTitle>
                         </div>
                         <Badge className="bg-green-600/20 text-green-400 border-green-600">Free</Badge>
                       </div>
@@ -317,7 +318,7 @@ export default function Settings() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="ollama-url" className="text-gray-300">Ollama URL</Label>
+                        <Label htmlFor="ollama-url" className="text-muted-foreground">Ollama URL</Label>
                         <Input
                           id="ollama-url"
                           placeholder="http://localhost:11434"
@@ -333,7 +334,7 @@ export default function Settings() {
                           placeholder="llama3:8b"
                           value={llmConfigs.ollama.model}
                           onChange={(e) => updateConfig('ollama', 'model', e.target.value)}
-                          className="bg-gray-800 border-gray-700 text-white"
+                          className="bg-muted border-border text-foreground"
                         />
                       </div>
                       <StatusIndicator status={llmConfigs.ollama.status} error={llmConfigs.ollama.error} />
@@ -343,7 +344,7 @@ export default function Settings() {
                           size="sm"
                           onClick={() => testConnection('ollama')}
                           disabled={testingProvider === 'ollama'}
-                          className="border-gray-700 text-gray-300 hover:bg-gray-800"
+                          className="border-border text-muted-foreground hover:bg-accent"
                         >
                           {testingProvider === 'ollama' ? (
                             <motion.div
@@ -388,7 +389,7 @@ export default function Settings() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Zap className="w-5 h-5 text-orange-400" />
-                          <CardTitle className="text-white">Groq</CardTitle>
+                          <CardTitle className="text-foreground">Groq</CardTitle>
                         </div>
                         <Badge className="bg-orange-600/20 text-orange-400 border-orange-600">Fast & Free</Badge>
                       </div>
@@ -404,12 +405,12 @@ export default function Settings() {
                             placeholder="gsk_..."
                             value={llmConfigs.groq.key}
                             onChange={(e) => updateConfig('groq', 'key', e.target.value)}
-                            className="bg-gray-800 border-gray-700 text-white pr-10"
+                            className="bg-muted border-border text-foreground pr-10"
                           />
                           <button
                             type="button"
                             onClick={() => toggleShowKey('groq')}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                           >
                             {showKeys.groq ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </button>
@@ -431,7 +432,7 @@ export default function Settings() {
                           size="sm"
                           onClick={() => testConnection('groq')}
                           disabled={testingProvider === 'groq'}
-                          className="border-gray-700 text-gray-300 hover:bg-gray-800"
+                          className="border-border text-muted-foreground hover:bg-accent"
                         >
                           {testingProvider === 'groq' ? (
                             <motion.div
@@ -476,7 +477,7 @@ export default function Settings() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Key className="w-5 h-5 text-blue-400" />
-                          <CardTitle className="text-white">OpenAI</CardTitle>
+                          <CardTitle className="text-foreground">OpenAI</CardTitle>
                         </div>
                         <Badge className="bg-blue-600/20 text-blue-400 border-blue-600">Pro</Badge>
                       </div>
@@ -494,12 +495,12 @@ export default function Settings() {
                                 placeholder="sk-..."
                                 value={llmConfigs.openai.key}
                                 onChange={(e) => updateConfig('openai', 'key', e.target.value)}
-                                className="bg-gray-800 border-gray-700 text-white pr-10"
+                                className="bg-muted border-border text-foreground pr-10"
                               />
                               <button
                                 type="button"
                                 onClick={() => toggleShowKey('openai')}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                               >
                                 {showKeys.openai ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                               </button>
@@ -521,7 +522,7 @@ export default function Settings() {
                               size="sm"
                               onClick={() => testConnection('openai')}
                               disabled={testingProvider === 'openai'}
-                              className="border-gray-700 text-gray-300 hover:bg-gray-800"
+                              className="border-border text-muted-foreground hover:bg-accent"
                             >
                               {testingProvider === 'openai' ? (
                                 <motion.div
@@ -568,7 +569,7 @@ export default function Settings() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Key className="w-5 h-5 text-violet-400" />
-                          <CardTitle className="text-white">Anthropic Claude</CardTitle>
+                          <CardTitle className="text-foreground">Anthropic Claude</CardTitle>
                         </div>
                         <Badge className="bg-violet-600/20 text-violet-400 border-violet-600">Pro</Badge>
                       </div>
@@ -586,12 +587,12 @@ export default function Settings() {
                                 placeholder="sk-ant-..."
                                 value={llmConfigs.anthropic.key}
                                 onChange={(e) => updateConfig('anthropic', 'key', e.target.value)}
-                                className="bg-gray-800 border-gray-700 text-white pr-10"
+                                className="bg-muted border-border text-foreground pr-10"
                               />
                               <button
                                 type="button"
                                 onClick={() => toggleShowKey('anthropic')}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                               >
                                 {showKeys.anthropic ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                               </button>
@@ -613,7 +614,7 @@ export default function Settings() {
                               size="sm"
                               onClick={() => testConnection('anthropic')}
                               disabled={testingProvider === 'anthropic'}
-                              className="border-gray-700 text-gray-300 hover:bg-gray-800"
+                              className="border-border text-muted-foreground hover:bg-accent"
                             >
                               {testingProvider === 'anthropic' ? (
                                 <motion.div
@@ -660,32 +661,32 @@ export default function Settings() {
               >
                 <Card className="bg-gray-900 border-gray-800">
                   <CardHeader>
-                    <CardTitle className="text-white">About AgentLens</CardTitle>
+                    <CardTitle className="text-foreground">About AgentLens</CardTitle>
                     <CardDescription>AI-powered codebase analysis and visualization</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="flex items-center gap-4">
-                      <span className="text-gray-400">Version:</span>
+                      <span className="text-muted-foreground">Version:</span>
                       <Badge variant="outline" className="border-violet-500 text-violet-400">v2.0.0</Badge>
                     </div>
 
-                    <Separator className="bg-gray-800" />
+                    <Separator className="opacity-50" />
 
                     <div className="space-y-3">
-                      <span className="text-gray-400">Built with:</span>
+                      <span className="text-muted-foreground">Built with:</span>
                       <div className="flex flex-wrap gap-2">
                         {['React', 'Node.js', 'Groq', 'LangChain', 'Supabase', 'Clerk'].map((tech) => (
-                          <Badge key={tech} className="bg-gray-800 text-gray-300 border-gray-700">
+                          <Badge key={tech} className="bg-muted text-muted-foreground border-border">
                             {tech}
                           </Badge>
                         ))}
                       </div>
                     </div>
 
-                    <Separator className="bg-gray-800" />
+                    <Separator className="opacity-50" />
 
                     <div className="space-y-3">
-                      <span className="text-gray-400">Active LLM Providers:</span>
+                      <span className="text-muted-foreground">Active LLM Providers:</span>
                       <div className="flex flex-wrap gap-2">
                         {systemStatus?.providers ? (
                           Object.entries(systemStatus.providers).map(([provider, available]) => (
@@ -693,7 +694,7 @@ export default function Settings() {
                               key={provider}
                               className={available
                                 ? 'bg-green-600/20 text-green-400 border-green-600'
-                                : 'bg-gray-800 text-gray-500 border-gray-700'
+                                : 'bg-muted text-muted-foreground border-border'
                               }
                             >
                               {available && <Check className="w-3 h-3 mr-1" />}
@@ -701,7 +702,7 @@ export default function Settings() {
                             </Badge>
                           ))
                         ) : (
-                          <span className="text-gray-500">Loading...</span>
+                          <span className="text-muted-foreground">Loading...</span>
                         )}
                       </div>
                     </div>
@@ -720,12 +721,12 @@ export default function Settings() {
                       </a>
                     </div>
 
-                    <div className="mt-6 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                    <div className="mt-6 p-4 bg-muted/50 rounded-lg border border-border">
                       <div className="flex items-center gap-2 text-amber-400 mb-2">
                         <AlertTriangle className="w-4 h-4" />
                         <span className="font-medium">Hackathon Demo</span>
                       </div>
-                      <p className="text-gray-400 text-sm">
+                      <p className="text-muted-foreground text-sm">
                         This application was built for a hackathon demo. Some features may be in development or have limited functionality.
                       </p>
                     </div>

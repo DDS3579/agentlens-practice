@@ -788,6 +788,7 @@ export async function runAnalysisPipeline(
       duration: totalDuration,
       agentsCompleted: results.agentsSummary.completed,
       agentsFailed: results.agentsSummary.failed,
+      fileTree: fileTreeData,
       summary: {
         bugsFound: results.security.bugs.length,
         refactorsFound: results.architecture.refactors.length,
@@ -812,4 +813,4 @@ export async function runAnalysisPipeline(
 }
 
 // Legacy export for backward compatibility
-export { getPipelineStatus };
+// export { getPipelineStatus };

@@ -54,7 +54,7 @@ function Navbar() {
   // Agent store for pipeline status
   const {
     isAnalyzing,
-    pipelinePhase,
+    currentPhase: pipelinePhase,
     agents,
     compilationResult,
     securitySummary,

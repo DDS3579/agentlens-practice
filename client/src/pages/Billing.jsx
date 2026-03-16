@@ -21,6 +21,12 @@ const Billing = () => {
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false)
   const [showDowngradeConfirm, setShowDowngradeConfirm] = useState(false)
   const { userProfile, isPro, analysesRemaining } = useAuth()
+  const setIsPro = useAuthStore(state => state.setIsPro)
+
+  const handleUpgradeClick = () => {
+    // Development auto-upgrade
+    setIsPro(true)
+  }
 
   const freeFeatures = [
     { text: '5 analyses per month', included: true },
@@ -75,21 +81,21 @@ const Billing = () => {
   }
 
   return (
-    <StaggerContainer className="min-h-screen bg-gray-950 p-6 md:p-8">
+    <StaggerContainer className="min-h-[calc(100vh-3.5rem)] p-6 lg:p-8">
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Page Header */}
         <FadeIn>
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-3xl md:text-4xl font-bold font-display text-white">
+                <h1 className="text-3xl md:text-4xl font-bold font-display text-foreground">
                   Billing & Plan
                 </h1>
                 <Badge className={isPro ? 'bg-green-600 hover:bg-green-600' : 'bg-gray-600 hover:bg-gray-600'}>
                   {isPro ? 'Pro' : 'Free'}
                 </Badge>
               </div>
-              <p className="text-gray-400 mt-2">
+              <p className="text-muted-foreground mt-2">
                 Manage your subscription and usage
               </p>
             </div>
@@ -98,18 +104,18 @@ const Billing = () => {
 
         {/* Current Plan Summary */}
         <FadeIn delay={0.1}>
-          <div className="bg-gray-900 border border-white/10 rounded-2xl p-6">
+          <div className="bg-card border border-border/50 rounded-2xl p-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               {/* Left side */}
               <div className="flex items-center gap-4">
-                <div className={`p-3 rounded-xl ${isPro ? 'bg-purple-600/20' : 'bg-gray-800'}`}>
-                  <Zap className={`w-8 h-8 ${isPro ? 'text-purple-400' : 'text-gray-400'}`} />
+                <div className={`p-3 rounded-xl ${isPro ? 'bg-violet-600/15' : 'bg-muted'}`}>
+                  <Zap className={`w-8 h-8 ${isPro ? 'text-violet-400' : 'text-muted-foreground'}`} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-white">
+                  <h3 className="text-xl font-semibold text-foreground">
                     {isPro ? 'Pro Plan' : 'Free Plan'}
                   </h3>
-                  <p className="text-gray-400">
+                  <p className="text-muted-foreground">
                     {isPro ? 'Full access to all features' : 'Basic access with limited analyses'}
                   </p>
                 </div>
@@ -147,7 +153,7 @@ const Billing = () => {
 
             {isPro && (
               <>
-                <Separator className="my-6 bg-white/10" />
+                <Separator className="my-6 opacity-50" />
                 <div className="flex justify-end">
                   <Button
                     variant="outline"
@@ -190,7 +196,7 @@ const Billing = () => {
               ctaDisabled={isPro}
               isCurrentPlan={isPro}
               isMostPopular={true}
-              onCtaClick={() => !isPro && setShowUpgradePrompt(true)}
+              onCtaClick={handleUpgradeClick}
             />
           </div>
         </FadeIn>
@@ -213,19 +219,19 @@ const Billing = () => {
                   >
                     <Zap className="w-16 h-16 text-purple-400 mb-4" />
                   </motion.div>
-                  <h2 className="text-2xl font-bold font-display text-white mb-2">
+                  <h2 className="text-2xl font-bold font-display text-foreground mb-2">
                     Upgrade to Pro
                   </h2>
-                  <p className="text-gray-400 mb-6">
+                  <p className="text-muted-foreground mb-6">
                     Payment processing is coming soon!
                   </p>
 
-                  <div className="bg-gray-900 rounded-xl p-6 w-full mb-6">
+                  <div className="bg-card rounded-xl p-6 w-full mb-6">
                     <div className="flex items-center justify-center gap-3 text-white">
                       <Mail className="w-6 h-6 text-purple-400" />
-                      <span className="text-lg font-medium">agentlens@demo.com</span>
+                      <span className="text-lg font-medium text-foreground">agentlens@demo.com</span>
                     </div>
-                    <p className="text-gray-400 mt-3 text-sm">
+                    <p className="text-muted-foreground mt-3 text-sm">
                       Send us an email with your account email to get Pro access for the demo
                     </p>
                   </div>
@@ -260,10 +266,10 @@ const Billing = () => {
               <div className="bg-red-950/30 border border-red-500/50 rounded-2xl p-8 max-w-2xl mx-auto">
                 <div className="flex flex-col items-center text-center">
                   <AlertCircle className="w-16 h-16 text-red-400 mb-4" />
-                  <h2 className="text-2xl font-bold font-display text-white mb-2">
+                  <h2 className="text-2xl font-bold font-display text-foreground mb-2">
                     Are you sure you want to downgrade?
                   </h2>
-                  <p className="text-gray-400 mb-6">
+                  <p className="text-muted-foreground mb-6">
                     You'll lose access to these features:
                   </p>
 
@@ -321,10 +327,10 @@ const Billing = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 + index * 0.1 }}
-                  className="bg-gray-900 rounded-xl p-4"
+                  className="bg-card border border-border/50 rounded-xl p-4"
                 >
-                  <h3 className="text-white font-medium mb-2">{item.question}</h3>
-                  <p className="text-gray-400 text-sm">{item.answer}</p>
+                  <h3 className="text-foreground font-medium mb-2">{item.question}</h3>
+                  <p className="text-muted-foreground text-sm">{item.answer}</p>
                 </motion.div>
               ))}
             </div>

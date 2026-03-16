@@ -213,19 +213,10 @@ export function sendEditCompleteEvent(res, data = {}) {
   });
 }
 
-// Make sure to export the new functions
-export {
-  setupSSEHeaders,
-  sendSSEEvent,
-  createSSEStream,
-  sendError,
-  sendDiffEvent,      // NEW
-  sendEditCompleteEvent, // NEW
-};
 
 
-// server/src/streaming/sseEmitter.js
-// Add these two new functions to the existing file
+// Additional SSE helper functions for agent status and phase events
+
 
 /**
  * Sends an agent status update event
