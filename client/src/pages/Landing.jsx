@@ -2,7 +2,7 @@ import Hero from '../components/landing/Hero.jsx'
 import Features from '../components/landing/Features.jsx'
 import HowItWorks from '../components/landing/HowItWorks.jsx'
 import Pricing from '../components/landing/Pricing.jsx'
-import Testimonials from '../components/landing/Testimonials.jsx'
+import Statistics from '../components/landing/Statistics.jsx'
 import { Link } from 'react-router-dom'
 import { Github, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -24,6 +24,14 @@ function Landing() {
                 </span>
               </span>
             </Link>
+
+            {/* Center - Navigation Links */}
+            <div className="hidden md:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
+              <a href="#features" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Features</a>
+              <a href="#how-it-works" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">How it Works</a>
+              <a href="#statistics" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Statistics</a>
+              <a href="#pricing" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Pricing</a>
+            </div>
 
             {/* Right Side - Auth Buttons */}
             <div className="flex items-center gap-3">
@@ -50,17 +58,45 @@ function Landing() {
       {/* Hero Section */}
       <Hero />
 
+      {/* Decorative Divider */}
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-12">
+        <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      </div>
+
       {/* Features Section */}
-      <Features />
+      <div id="features" className="pt-8 pb-12 scroll-mt-24">
+        <Features />
+      </div>
+
+      {/* Decorative Divider */}
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      </div>
 
       {/* How It Works Section */}
-      <HowItWorks />
+      <div id="how-it-works" className="pt-8 pb-12 scroll-mt-24">
+        <HowItWorks />
+      </div>
 
-      {/* Testimonials Section */}
-      <Testimonials />
+      {/* Decorative Divider */}
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      </div>
+
+      {/* Statistics Section */}
+      <div id="statistics" className="pt-8 pb-12 scroll-mt-24">
+        <Statistics />
+      </div>
+
+      {/* Decorative Divider */}
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      </div>
 
       {/* Pricing Section */}
-      <Pricing />
+      <div id="pricing" className="pt-8 pb-24 scroll-mt-24">
+        <Pricing />
+      </div>
 
       {/* Footer */}
       <footer className="bg-card border-t border-border/50 py-12 px-4">

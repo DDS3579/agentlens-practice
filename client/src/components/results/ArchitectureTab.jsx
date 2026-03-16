@@ -388,7 +388,7 @@ const ArchitectureTab = () => {
             className="w-full px-4 py-3 flex items-center justify-between text-white hover:bg-[#252a3e] transition-colors"
           >
             <span className="font-medium flex items-center gap-2">
-              <span>🔍</span> Design Pattern Analysis
+              Design Pattern Analysis
             </span>
             <span className="text-gray-400">{showPatternAnalysis ? '▲' : '▼'}</span>
           </button>
