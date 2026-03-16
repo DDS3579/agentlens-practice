@@ -1,8 +1,11 @@
-
 // server/src/agents/fixAgent.js
+// 
+// MODIFIED VERSION - Streams diff events to SSE before applying fixes
+//
 
 import { callLLM, callLLMWithUserConfig } from '../llm/llmService.js';
 import { buildFixPrompt, buildMultiFixPrompt, validateFixResponse, FIX_AGENT_SYSTEM_PROMPT } from '../prompts/fixPrompt.js';
+import { sendDiffEvent, sendEditCompleteEvent } from '../streaming/sseEmitter.js';
 
 /**
  * Group bugs by file for efficient multi-fix
@@ -33,6 +36,35 @@ function sleep(ms) {
 }
 
 /**
+ * Parse the fix response to extract line-level changes
+ * @param {string} originalContent - Original file content
+ * @param {string} fixedContent - Fixed file content
+ * @param {Object} bug - Bug being fixed
+ * @returns {Array<{lineStart: number, lineEnd: number, newContent: string, editType: string}>}
+ */
+function parseFixChanges(originalContent, fixedContent, bug) {
+  const originalLines = originalContent.split('\n');
+  const fixedLines = fixedContent.split('\n');
+  
+  // For simplicity, we'll return the change around the bug's line
+  // In a real implementation, you'd use a diff algorithm
+  const lineStart = Math.max(1, bug.line - 2);
+  const lineEnd = Math.min(originalLines.length, bug.line + 2);
+  
+  // Extract the relevant section from fixed content
+  const fixedLineStart = lineStart - 1;
+  const fixedLineEnd = Math.min(fixedLines.length, lineEnd + (fixedLines.length - originalLines.length));
+  const newContent = fixedLines.slice(fixedLineStart, fixedLineEnd).join('\n');
+  
+  return [{
+    lineStart,
+    lineEnd,
+    newContent,
+    editType: 'replace',
+  }];
+}
+
+/**
  * Stream content character by character with delay
  * @param {string} content - Content to stream
  * @param {string} bugId - Bug ID for the event
@@ -51,13 +83,15 @@ async function streamContent(content, bugId, onProgress) {
 
 /**
  * Fix a single bug in a file
+ * 
  * @param {Object} bug - Bug object with shape: { id, file, line, type, severity, description, vulnerableCode, suggestedFix }
  * @param {string} fileContent - Current content of the file to fix
  * @param {Function} onProgress - Async function for streaming events
  * @param {Object|null} userLLMConfig - Optional user LLM config object
+ * @param {Object|null} sseRes - Optional SSE response object for streaming diffs to frontend
  * @returns {Promise<{ success: boolean, fixedContent?: string, bug: Object, error?: string }>}
  */
-export async function fixSingleBug(bug, fileContent, onProgress, userLLMConfig = null) {
+export async function fixSingleBug(bug, fileContent, onProgress, userLLMConfig = null, sseRes = null) {
   try {
     // Notify fix starting
     await onProgress('fix_start', {
@@ -115,7 +149,32 @@ export async function fixSingleBug(bug, fileContent, onProgress, userLLMConfig =
       };
     }
 
-    // Stream the fixed content
+    // ============================================
+    // NEW: Stream diff event to frontend BEFORE applying
+    // This allows the editor to show real-time updates
+    // ============================================
+    if (sseRes) {
+      const changes = parseFixChanges(fileContent, fixedContent, bug);
+      
+      for (const change of changes) {
+        // Send diff event for each change
+        sendDiffEvent(sseRes, {
+          file: bug.file,
+          lineStart: change.lineStart,
+          lineEnd: change.lineEnd,
+          newContent: change.newContent,
+          editType: change.editType,
+          agentName: 'FixAgent',
+          message: `Fixing ${bug.type}: ${bug.description?.substring(0, 50)}...`,
+        });
+        
+        // Small delay between events for visual effect
+        await sleep(100);
+      }
+    }
+    // ============================================
+
+    // Stream the fixed content (existing behavior)
     await streamContent(fixedContent, bug.id, onProgress);
 
     // Notify fix complete
@@ -155,13 +214,15 @@ export async function fixSingleBug(bug, fileContent, onProgress, userLLMConfig =
 
 /**
  * Fix all bugs in a list sequentially
+ * 
  * @param {Array} bugs - Array of bug objects
  * @param {Function} getFileContent - Async function(filePath) => string that fetches current file content
  * @param {Function} onProgress - Async function for streaming events
  * @param {Object|null} userLLMConfig - Optional user LLM config object
+ * @param {Object|null} sseRes - Optional SSE response object for streaming diffs to frontend
  * @returns {Promise<Array<{ success: boolean, fixedContent?: string, bug: Object, error?: string }>>}
  */
-export async function fixAllBugs(bugs, getFileContent, onProgress, userLLMConfig = null) {
+export async function fixAllBugs(bugs, getFileContent, onProgress, userLLMConfig = null, sseRes = null) {
   const results = [];
   
   if (!bugs || bugs.length === 0) {
@@ -209,7 +270,9 @@ export async function fixAllBugs(bugs, getFileContent, onProgress, userLLMConfig
       continue;
     }
 
-    // Fix each bug in this file sequentially
+    // ============================================
+    // MODIFIED: Fix each bug and stream diffs
+    // ============================================
     for (let bugIndex = 0; bugIndex < fileBugs.length; bugIndex++) {
       const bug = fileBugs[bugIndex];
       overallIndex++;
@@ -227,7 +290,8 @@ export async function fixAllBugs(bugs, getFileContent, onProgress, userLLMConfig
         }
       };
 
-      const result = await fixSingleBug(bug, fileContent, wrappedOnProgress, userLLMConfig);
+      // Pass sseRes for streaming diffs
+      const result = await fixSingleBug(bug, fileContent, wrappedOnProgress, userLLMConfig, sseRes);
       results.push(result);
 
       // If fix was successful, update fileContent for subsequent bugs in same file
@@ -235,6 +299,7 @@ export async function fixAllBugs(bugs, getFileContent, onProgress, userLLMConfig
         fileContent = result.fixedContent;
       }
     }
+    // ============================================
 
     // Delay between files (except after the last one)
     if (fileIndex < files.length - 1) {
@@ -242,5 +307,44 @@ export async function fixAllBugs(bugs, getFileContent, onProgress, userLLMConfig
     }
   }
 
+  // ============================================
+  // NEW: Send edit complete event when all fixes are done
+  // ============================================
+  if (sseRes) {
+    sendEditCompleteEvent(sseRes, {
+      totalFixed: results.filter(r => r.success).length,
+      totalFailed: results.filter(r => !r.success).length,
+    });
+  }
+  // ============================================
+
   return results;
+}
+
+/**
+ * Fix bugs with SSE streaming support
+ * This is a convenience wrapper for routes that have SSE response
+ * 
+ * @param {Array} bugs - Array of bug objects
+ * @param {Object} fileContents - Map of file path to content
+ * @param {Object} sseRes - SSE response object
+ * @param {Object|null} userLLMConfig - Optional user LLM config
+ */
+export async function fixBugsWithStreaming(bugs, fileContents, sseRes, userLLMConfig = null) {
+  const getFileContent = async (filePath) => {
+    if (fileContents[filePath] !== undefined) {
+      return fileContents[filePath];
+    }
+    throw new Error(`File not found: ${filePath}`);
+  };
+
+  const onProgress = async (event, data) => {
+    // Forward progress events to SSE
+    if (sseRes && !sseRes.writableEnded) {
+      const formattedEvent = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+      sseRes.write(formattedEvent);
+    }
+  };
+
+  return fixAllBugs(bugs, getFileContent, onProgress, userLLMConfig, sseRes);
 }

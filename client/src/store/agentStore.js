@@ -1,379 +1,305 @@
-// Code V1 Start
+// client/src/store/agentStore.js
+import { create } from "zustand";
 
+const MAX_ACTIVITY_ITEMS = 200;
 
-// import { create } from 'zustand';
-
-// const initialAgents = {
-//   coordinator: { status: 'idle', currentAction: '', findings: 0, iterations: 0 },
-//   security: { status: 'idle', currentAction: '', findings: 0, iterations: 0 },
-//   writer: { status: 'idle', currentAction: '', findings: 0, iterations: 0 },
-//   architecture: { status: 'idle', currentAction: '', findings: 0, iterations: 0 }
-// };
-
-// const initialState = {
-//   isAnalyzing: false,
-//   sessionId: null,
-//   repoUrl: '',
-//   repoSummary: null,
-//   selectedPaths: [],
-//   pipelinePhase: 'idle',
-//   pipelineMessage: '',
-//   agents: { ...initialAgents },
-//   plan: null,
-//   bugs: [],
-//   documentation: '',
-//   documentationMeta: {},
-//   refactors: [],
-//   compilationResult: null,
-//   securitySummary: null,
-//   architectureResult: null,
-//   activityFeed: [],
-//   agentMessages: [],
-//   finalResults: null,
-//   error: null
-// };
-
-// const createActivityItem = (type, message, agentName = null, isHighlighted = false, data = null) => ({
-//   id: Date.now() + Math.random(),
-//   timestamp: Date.now(),
-//   type,
-//   agentName,
-//   message,
-//   isHighlighted,
-//   data
-// });
-
-// const addToActivityFeed = (feed, item) => {
-//   const newFeed = [...feed, item];
-//   if (newFeed.length > 200) {
-//     return newFeed.slice(-200);
-//   }
-//   return newFeed;
-// };
-
-// const useAgentStore = create((set, get) => ({
-//   ...initialState,
-
-//   setRepoUrl: (url) => set({ repoUrl: url }),
-
-//   setSelectedPaths: (paths) => set({ selectedPaths: paths }),
-
-//   startAnalysis: () => set({
-//     isAnalyzing: true,
-//     bugs: [],
-//     documentation: '',
-//     documentationMeta: {},
-//     refactors: [],
-//     compilationResult: null,
-//     securitySummary: null,
-//     architectureResult: null,
-//     finalResults: null,
-//     plan: null,
-//     activityFeed: [],
-//     agentMessages: [],
-//     error: null,
-//     pipelinePhase: 'fetching',
-//     agents: {
-//       coordinator: { status: 'idle', currentAction: '', findings: 0, iterations: 0 },
-//       security: { status: 'idle', currentAction: '', findings: 0, iterations: 0 },
-//       writer: { status: 'idle', currentAction: '', findings: 0, iterations: 0 },
-//       architecture: { status: 'idle', currentAction: '', findings: 0, iterations: 0 }
-//     }
-//   }),
-
-//   handleSSEEvent: (eventName, data) => {
-//     const state = get();
-
-//     switch (eventName) {
-//       case 'pipeline_start': {
-//         const activityItem = createActivityItem('system', data.message);
-//         set({
-//           pipelineMessage: data.message,
-//           activityFeed: addToActivityFeed(state.activityFeed, activityItem)
-//         });
-//         break;
-//       }
-
-//       case 'repo_ready': {
-//         const message = `Repository loaded: ${data.summary?.repo || 'unknown'} (${data.filesCount || 0} files)`;
-//         const activityItem = createActivityItem('system', message);
-//         set({
-//           repoSummary: data.summary,
-//           pipelinePhase: 'planning',
-//           activityFeed: addToActivityFeed(state.activityFeed, activityItem)
-//         });
-//         break;
-//       }
-
-//       case 'session_created': {
-//         set({ sessionId: data.sessionId });
-//         break;
-//       }
-
-//       case 'agent_status': {
-//         const { agentName, status, currentAction } = data;
-//         const newAgents = { ...state.agents };
-        
-//         if (newAgents[agentName]) {
-//           newAgents[agentName] = {
-//             ...newAgents[agentName],
-//             status,
-//             currentAction: currentAction || ''
-//           };
-//         }
-
-//         const updates = { agents: newAgents };
-        
-//         if (status === 'acting' || status === 'thinking') {
-//           updates.pipelinePhase = 'analyzing';
-//         }
-
-//         const activityItem = createActivityItem(
-//           'agent_status',
-//           currentAction || status,
-//           agentName
-//         );
-//         updates.activityFeed = addToActivityFeed(state.activityFeed, activityItem);
-
-//         set(updates);
-//         break;
-//       }
-
-//       case 'coordinator_plan': {
-//         const activityItem = createActivityItem(
-//           'plan',
-//           data.plan?.planSummary || 'Plan created',
-//           'coordinator'
-//         );
-//         set({
-//           plan: data.plan,
-//           pipelinePhase: 'planning',
-//           activityFeed: addToActivityFeed(state.activityFeed, activityItem)
-//         });
-//         break;
-//       }
-
-//       case 'agent_finding': {
-//         const updates = {};
-//         let activityMessage = '';
-//         let agentName = '';
-
-//         if (data.type === 'bug') {
-//           updates.bugs = [...state.bugs, data.data];
-//           updates.agents = {
-//             ...state.agents,
-//             security: {
-//               ...state.agents.security,
-//               findings: state.agents.security.findings + 1
-//             }
-//           };
-//           agentName = 'security';
-//           activityMessage = `Found bug: ${data.data?.title || data.data?.message || 'Security issue'}`;
-//         } else if (data.type === 'refactor') {
-//           updates.refactors = [...state.refactors, data.data];
-//           updates.agents = {
-//             ...state.agents,
-//             architecture: {
-//               ...state.agents.architecture,
-//               findings: state.agents.architecture.findings + 1
-//             }
-//           };
-//           agentName = 'architecture';
-//           activityMessage = `Found refactor: ${data.data?.title || data.data?.suggestion || 'Refactor suggestion'}`;
-//         } else if (data.type === 'documentation') {
-//           updates.documentation = data.data;
-//           agentName = 'writer';
-//           activityMessage = 'Documentation generated';
-//         }
-
-//         const activityItem = createActivityItem('finding', activityMessage, agentName);
-//         updates.activityFeed = addToActivityFeed(state.activityFeed, activityItem);
-
-//         set(updates);
-//         break;
-//       }
-
-//       case 'agent_communication': {
-//         const activityItem = createActivityItem(
-//           'communication',
-//           `→ ${data.toAgent}: ${(data.content || '').substring(0, 100)}`,
-//           data.fromAgent,
-//           true
-//         );
-//         set({
-//           agentMessages: [...state.agentMessages, data],
-//           activityFeed: addToActivityFeed(state.activityFeed, activityItem)
-//         });
-//         break;
-//       }
-
-//       case 'session_status': {
-//         if (data.status === 'complete') {
-//           set({ pipelinePhase: 'complete' });
-//         } else if (data.status === 'error') {
-//           set({ pipelinePhase: 'error' });
-//         }
-//         break;
-//       }
-
-//       case 'analysis_complete': {
-//         const updates = {
-//           pipelinePhase: 'complete',
-//           isAnalyzing: false
-//         };
-
-//         if (data.compilationResult) {
-//           updates.compilationResult = data.compilationResult;
-//         }
-
-//         const activityItem = createActivityItem('system', 'Analysis complete!');
-//         updates.activityFeed = addToActivityFeed(state.activityFeed, activityItem);
-
-//         set(updates);
-//         break;
-//       }
-
-//       case 'final_results': {
-//         const activityItem = createActivityItem('system', 'Final results received');
-//         set({
-//           finalResults: data,
-//           bugs: data.security?.bugs || [],
-//           documentation: data.documentation || '',
-//           refactors: data.architecture?.refactors || [],
-//           compilationResult: data.compilation,
-//           securitySummary: data.security?.summary,
-//           architectureResult: data.architecture?.result,
-//           isAnalyzing: false,
-//           pipelinePhase: 'complete',
-//           activityFeed: addToActivityFeed(state.activityFeed, activityItem)
-//         });
-//         break;
-//       }
-
-//       case 'error':
-//       case 'session_error': {
-//         const activityItem = createActivityItem('error', data.error);
-//         set({
-//           error: data.error,
-//           pipelinePhase: 'error',
-//           isAnalyzing: false,
-//           activityFeed: addToActivityFeed(state.activityFeed, activityItem)
-//         });
-//         break;
-//       }
-
-//       default:
-//         break;
-//     }
-//   },
-
-//   setError: (error) => set({
-//     error,
-//     pipelinePhase: 'error',
-//     isAnalyzing: false
-//   }),
-
-//   reset: () => set({ ...initialState })
-// }));
-
-// export default useAgentStore;
-
-
-// Code V1 end
-
-
-
-// Code V2 Start
-import { create } from 'zustand'
-
-const MAX_ACTIVITY_ITEMS = 200
+// ============================================
+// Initial Agent State Shape
+// ============================================
+const createInitialAgentState = () => ({
+  status: "idle", // 'idle' | 'running' | 'complete' | 'error'
+  startedAt: null,
+  duration: null,
+  error: null,
+  message: "",
+  result: null,
+  currentAction: "",
+});
 
 const initialState = {
-  // Pipeline state
-  pipelinePhase: 'idle', // 'idle' | 'fetching' | 'planning' | 'analyzing' | 'compiling' | 'complete' | 'error'
-  pipelineMessage: '',
+  // ============================================
+  // Agent States - Support concurrent execution
+  // ============================================
+  agents: {
+    coordinator: createInitialAgentState(),
+    architecture: createInitialAgentState(),
+    security: createInitialAgentState(),
+    docs: createInitialAgentState(),
+    fix: createInitialAgentState(),
+    custom: createInitialAgentState(),
+  },
+
+  // ============================================
+  // Pipeline Phase Tracking
+  // ============================================
+  currentPhase: "idle", // 'idle' | 'coordinator' | 'analysis' | 'fix' | 'complete' | 'error'
+  pipelineStartedAt: null,
+  pipelineDuration: null,
+  pipelineMessage: "",
   isAnalyzing: false,
   error: null,
 
-  // Session
+  // ============================================
+  // Session & Analysis
+  // ============================================
   sessionId: null,
   analysisId: null,
   isSaving: false,
 
-  // Repository info
+  // ============================================
+  // Repository Info
+  // ============================================
   repoInfo: null,
 
-  // Analysis plan from coordinator
-  plan: null,
-
-  // Agent states
-  agents: {
-    coordinator: { status: 'idle', message: '', result: null },
-    security: { status: 'idle', message: '', result: null },
-    writer: { status: 'idle', message: '', result: null },
-    architecture: { status: 'idle', message: '', result: null }
-  },
-
+  // ============================================
   // Results
+  // ============================================
+  plan: null,
   securitySummary: null,
   writerResult: null,
   architectureResult: null,
   compilationResult: null,
+  fixResult: null,
+  customResult: null,
 
-  // Activity feed
+  // ============================================
+  // Activity Feed
+  // ============================================
   activityLog: [],
 
+  // ============================================
   // Timing
+  // ============================================
   startTime: null,
-  endTime: null
-}
+  endTime: null,
+
+  // ============================================
+  // Current Repo URL
+  // ============================================
+  currentRepoUrl: '',
+
+  // Token Usage Tracking
+  tokenUsage: {
+    prompt: 0,
+    completion: 0,
+    total: 0,
+    byAgent: {
+      coordinator: 0,
+      architecture: 0,
+      security: 0,
+      docs: 0,
+      fix: 0,
+      custom: 0,
+    },
+  },
+};
 
 const useAgentStore = create((set, get) => ({
   ...initialState,
 
-  // Actions
-  setError: (error) => set({ error }),
+  // ============================================
+  // Agent Status Actions
+  // ============================================
 
-  setRepoUrl: (url) => set((state) => ({ 
-    repoInfo: { ...(state.repoInfo || {}), url, repoUrl: url } 
-  })),
-
-  startAnalysis: () => {
-    get().resetPipeline()
-    set({
-      isAnalyzing: true,
-      pipelinePhase: 'fetching',
-      pipelineMessage: 'Connecting to server...'
-    })
-  },
-
-  setAnalysisId: (analysisId) => set({ analysisId }),
-
-  setPipelinePhase: (phase, message = '') => {
-    set({
-      pipelinePhase: phase,
-      pipelineMessage: message,
-      isAnalyzing: ['fetching', 'planning', 'analyzing', 'compiling'].includes(phase)
-    })
-  },
-
-  setRepoInfo: (repoInfo) => set({ repoInfo }),
-
-  setSessionId: (sessionId) => set({ sessionId }),
-
-  setPlan: (plan) => set({ plan }),
-
-  updateAgent: (agentName, updates) => {
-    set((state) => ({
-      agents: {
-        ...state.agents,
-        [agentName]: {
-          ...state.agents[agentName],
-          ...updates
-        }
+  /**
+   * Set status for a specific agent
+   * Supports concurrent agent state updates
+   *
+   * @param {string} agentName - Name of the agent
+   * @param {string} status - New status
+   * @param {Object} extra - Additional data { duration, error, startedAt, message, currentAction }
+   */
+  setAgentStatus: (agentName, status, extra = {}) => {
+    set((state) => {
+      // Ensure we have a valid agent
+      if (!state.agents[agentName]) {
+        console.warn(`[AgentStore] Unknown agent: ${agentName}`);
+        return state;
       }
-    }))
+
+      return {
+        agents: {
+          ...state.agents,
+          [agentName]: {
+            ...state.agents[agentName],
+            status,
+            ...extra,
+            // Ensure currentAction is set for running status
+            currentAction:
+              extra.currentAction ||
+              extra.message ||
+              (status === "running"
+                ? "Processing..."
+                : status === "complete"
+                  ? "Complete"
+                  : state.agents[agentName].currentAction),
+          },
+        },
+      };
+    });
   },
+
+  /**
+   * Add token usage from an LLM call
+   * @param {string} agentName - Which agent used the tokens
+   * @param {number} promptTokens - Input tokens
+   * @param {number} completionTokens - Output tokens
+   */
+  addTokenUsage: (agentName, promptTokens, completionTokens) => {
+    set((state) => {
+      const p = promptTokens || 0;
+      const c = completionTokens || 0;
+      const agentKey = state.tokenUsage.byAgent.hasOwnProperty(agentName)
+        ? agentName
+        : "custom"; // fallback to custom for unknown agents
+
+      return {
+        tokenUsage: {
+          prompt: state.tokenUsage.prompt + p,
+          completion: state.tokenUsage.completion + c,
+          total: state.tokenUsage.total + p + c,
+          byAgent: {
+            ...state.tokenUsage.byAgent,
+            [agentKey]: (state.tokenUsage.byAgent[agentKey] || 0) + p + c,
+          },
+        },
+      };
+    });
+  },
+
+  /**
+   * Reset all token usage counters
+   */
+  resetTokenUsage: () => {
+    set({
+      tokenUsage: {
+        prompt: 0,
+        completion: 0,
+        total: 0,
+        byAgent: {
+          coordinator: 0,
+          architecture: 0,
+          security: 0,
+          docs: 0,
+          fix: 0,
+          custom: 0,
+        },
+      },
+    });
+  },
+
+  /**
+   * Set the current pipeline phase
+   * @param {string} phase
+   * @param {string} message
+   */
+  setPhase: (phase, message = "") => {
+    set({
+      currentPhase: phase,
+      pipelineMessage: message,
+      isAnalyzing: ["coordinator", "analysis", "fix"].includes(phase),
+    });
+  },
+
+  /**
+   * Reset all agents to idle state
+   */
+  resetAgents: () => {
+    set({
+      agents: {
+        coordinator: createInitialAgentState(),
+        architecture: createInitialAgentState(),
+        security: createInitialAgentState(),
+        docs: createInitialAgentState(),
+        fix: createInitialAgentState(),
+        custom: createInitialAgentState(),
+      },
+    });
+  },
+
+  /**
+   * Reset entire pipeline to initial state
+   */
+  resetPipeline: () => {
+    set({
+      ...initialState,
+      tokenUsage: {
+        prompt: 0,
+        completion: 0,
+        total: 0,
+        byAgent: {
+          coordinator: 0,
+          architecture: 0,
+          security: 0,
+          docs: 0,
+          fix: 0,
+          custom: 0,
+        },
+      },
+      activityLog: [
+        {
+          id: Date.now(),
+          timestamp: new Date().toISOString(),
+          type: "system",
+          agent: "system",
+          message: "Ready for new analysis",
+        },
+      ],
+    });
+  },
+
+  // Alias for backward compatibility
+  reset: () => get().resetPipeline(),
+
+  // ============================================
+  // Computed Selectors (call these as functions)
+  // ============================================
+
+  /**
+   * Get array of currently running agent names
+   * @returns {Array<string>}
+   */
+  getRunningAgents: () => {
+    const agents = get().agents;
+    return Object.entries(agents)
+      .filter(([_, state]) => state.status === "running")
+      .map(([name]) => name);
+  },
+
+  /**
+   * Check if any agent is currently running
+   * @returns {boolean}
+   */
+  isAnyAgentRunning: () => {
+    const agents = get().agents;
+    return Object.values(agents).some((a) => a.status === "running");
+  },
+
+  /**
+   * Get array of completed agent names
+   * @returns {Array<string>}
+   */
+  getCompletedAgents: () => {
+    const agents = get().agents;
+    return Object.entries(agents)
+      .filter(([_, state]) => state.status === "complete")
+      .map(([name]) => name);
+  },
+
+  /**
+   * Get array of failed agent names
+   * @returns {Array<string>}
+   */
+  getFailedAgents: () => {
+    const agents = get().agents;
+    return Object.entries(agents)
+      .filter(([_, state]) => state.status === "error")
+      .map(([name]) => name);
+  },
+
+  // ============================================
+  // Activity Feed
+  // ============================================
 
   addActivity: (activity) => {
     set((state) => {
@@ -382,59 +308,105 @@ const useAgentStore = create((set, get) => ({
         {
           id: Date.now() + Math.random(),
           timestamp: new Date().toISOString(),
-          ...activity
-        }
-      ].slice(-MAX_ACTIVITY_ITEMS)
-      return { activityLog: newLog }
-    })
+          ...activity,
+        },
+      ].slice(-MAX_ACTIVITY_ITEMS);
+      return { activityLog: newLog };
+    });
   },
 
-  // Save analysis to backend
+  // ============================================
+  // Other Actions (preserved from existing store)
+  // ============================================
+
+  setError: (error) => set({ error }),
+
+  setRepoUrl: (url) =>
+    set((state) => ({
+      repoInfo: { ...(state.repoInfo || {}), url, repoUrl: url },
+      currentRepoUrl: url,
+    })),
+
+  setCurrentRepoUrl: (url) => set({ currentRepoUrl: url }),
+
+  startAnalysis: () => {
+    get().resetPipeline();
+    set({
+      isAnalyzing: true,
+      currentPhase: "coordinator",
+      pipelineMessage: "Connecting to server...",
+      pipelineStartedAt: Date.now(),
+      startTime: Date.now(),
+    });
+  },
+
+  setAnalysisId: (analysisId) => set({ analysisId }),
+  setRepoInfo: (repoInfo) => set({ repoInfo }),
+  setSessionId: (sessionId) => set({ sessionId }),
+  setPlan: (plan) => set({ plan }),
+
+  // Legacy updateAgent method for compatibility
+  updateAgent: (agentName, updates) => {
+    get().setAgentStatus(
+      agentName,
+      updates.status || get().agents[agentName]?.status,
+      updates,
+    );
+  },
+
+  // ============================================
+  // Save Analysis to Backend
+  // ============================================
+
   saveAnalysisToBackend: async () => {
-    const state = get()
-    
-    // Don't save if already saving or no results
+    const state = get();
+
     if (state.isSaving || !state.compilationResult) {
-      return
+      return;
     }
 
-    // Get token from window (set by Dashboard)
-    const getToken = window.__agentlens_getToken
+    const getToken = window.__agentlens_getToken;
     if (!getToken) {
-      console.warn('No getToken function available, skipping save')
-      return
+      console.warn("No getToken function available, skipping save");
+      return;
     }
 
-    set({ isSaving: true })
+    set({ isSaving: true });
 
     try {
-      const token = await getToken()
-      
-      const repoUrl = state.repoInfo?.url || state.repoInfo?.repoUrl || ''
-      const repoName = state.repoInfo?.name || state.repoInfo?.repoName || repoUrl.split('/').slice(-2).join('/')
-      
+      const token = await getToken();
+
+      const repoUrl = state.repoInfo?.url || state.repoInfo?.repoUrl || "";
+      const repoName =
+        state.repoInfo?.name ||
+        state.repoInfo?.repoName ||
+        repoUrl.split("/").slice(-2).join("/");
+
       const results = {
         plan: state.plan,
         bugs: state.securitySummary,
         documentation: state.writerResult,
         refactors: state.architectureResult,
-        summary: state.compilationResult
-      }
+        summary: state.compilationResult,
+        fix: state.fixResult,
+        custom: state.customResult,
+      };
 
-      const fileCount = state.repoInfo?.files?.length || 0
-      const bugCount = state.securitySummary?.totalIssues || 
-                       state.securitySummary?.issues?.length || 
-                       state.compilationResult?.bugs?.length || 0
-      
-      const durationMs = state.startTime && state.endTime 
-        ? state.endTime - state.startTime 
-        : 0
+      const fileCount = state.repoInfo?.files?.length || 0;
+      const bugCount =
+        state.securitySummary?.totalIssues ||
+        state.securitySummary?.issues?.length ||
+        state.compilationResult?.bugs?.length ||
+        0;
 
-      const response = await fetch('/api/history/save', {
-        method: 'POST',
+      const durationMs =
+        state.startTime && state.endTime ? state.endTime - state.startTime : 0;
+
+      const response = await fetch("/api/history/save", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           repoUrl,
@@ -442,366 +414,418 @@ const useAgentStore = create((set, get) => ({
           results,
           fileCount,
           bugCount,
-          durationMs
-        })
-      })
+          durationMs,
+        }),
+      });
 
       if (response.ok) {
-        const data = await response.json()
-        set({ analysisId: data.analysis?.id || data.id })
-        console.log('[AgentStore] Analysis saved successfully:', data.analysis?.id || data.id)
+        const data = await response.json();
+        set({ analysisId: data.analysis?.id || data.id });
+        console.log(
+          "[AgentStore] Analysis saved successfully:",
+          data.analysis?.id || data.id,
+        );
       } else {
-        console.error('[AgentStore] Failed to save analysis:', response.status)
+        console.error("[AgentStore] Failed to save analysis:", response.status);
       }
     } catch (error) {
-      console.error('[AgentStore] Error saving analysis:', error)
+      console.error("[AgentStore] Error saving analysis:", error);
     } finally {
-      set({ isSaving: false })
+      set({ isSaving: false });
     }
   },
 
-  // Handle SSE events from the pipeline
-  // Maps EXACTLY to backend events from sseEmitter.js and analyzeRoute.js
+  // ============================================
+  // SSE Event Handler (Updated for Parallel Support)
+  // ============================================
+
   handleSSEEvent: (eventName, data) => {
-    const { addActivity, updateAgent, setPipelinePhase, saveAnalysisToBackend } = get()
+    const { addActivity, setAgentStatus, setPhase, saveAnalysisToBackend } =
+      get();
 
     switch (eventName) {
-      // ── Backend: analyzeRoute sends "pipeline_start" at Step 3 ──
-      case 'pipeline_start':
+      // ── Pipeline Start ──
+      case "pipeline_start":
         set({
           startTime: Date.now(),
+          pipelineStartedAt: Date.now(),
           isAnalyzing: true,
-          error: null
-        })
-        setPipelinePhase('fetching', data.message || 'Starting analysis...')
+          error: null,
+        });
+        setPhase("coordinator", data.message || "Starting analysis...");
         addActivity({
-          type: 'system',
-          agent: 'system',
-          message: data.message || `Accessing ${data.owner}/${data.repo}...`
-        })
-        break
+          type: "system",
+          agent: "system",
+          message: data.message || `Accessing ${data.owner}/${data.repo}...`,
+        });
+        break;
 
-      // ── Backend: analyzeRoute sends "repo_ready" at Step 6 ──
-      case 'repo_ready':
-        set({ repoInfo: data.summary })
-        setPipelinePhase('fetching', `Fetched ${data.filesCount || 0} files`)
+      // ── Repository Ready ──
+      case "repo_ready":
+        set({ repoInfo: data.summary });
         addActivity({
-          type: 'info',
-          agent: 'system',
-          message: `Repository loaded: ${data.summary?.repo || 'unknown'} (${data.filesCount || 0} files)`
-        })
-        break
+          type: "info",
+          agent: "system",
+          message: `Repository loaded: ${data.summary?.repo || "unknown"} (${data.filesCount || 0} files)`,
+        });
+        break;
 
-      // ── Backend: analyzeRoute sends "session_created" in onSession callback ──
-      case 'session_created':
-        set({ sessionId: data.sessionId })
-        addActivity({
-          type: 'system',
-          agent: 'system',
-          message: `Session created: ${data.sessionId}`
-        })
-        break
+      // ── Session Created ──
+      case "session_created":
+        set({ sessionId: data.sessionId });
+        break;
 
-      // ── Backend: SSE emitter sends "connected" on initial connection ──
-      case 'connected':
-        // Initial connection handshake — just acknowledge
-        break
+      // ── Connected (SSE handshake) ──
+      case "connected":
+        break;
 
-      // ── Backend: memory.setAgentStatus → "agent_status" ──
-      // data shape: { agentName, status, currentAction }
-      case 'agent_status': {
-        const agentName = data.agentName || data.agent
-        if (agentName && get().agents[agentName]) {
-          const isRunning = data.status === 'acting' || data.status === 'thinking' || data.status === 'analyzing'
-          updateAgent(agentName, {
-            status: isRunning ? 'running' : data.status,
-            message: data.currentAction || data.status,
-            currentAction: data.currentAction || ''
-          })
-          if (isRunning) {
-            setPipelinePhase('analyzing', `${agentName} agent: ${data.currentAction || 'working...'}`)
+      // ── Agent Status Update (Concurrent Support) ──
+      case "agent_update":
+      case "agent_status": {
+        const agentName = data.agent || data.agentName;
+
+        if (agentName) {
+          // Map 'docs' to 'writer' for display if needed
+          const displayName = agentName === "docs" ? "writer" : agentName;
+          const storeAgentName = agentName; // Keep original for store
+
+          // Determine status
+          let status = data.status;
+          if (
+            status === "acting" ||
+            status === "thinking" ||
+            status === "analyzing"
+          ) {
+            status = "running";
           }
+
+          // Update agent state
+          setAgentStatus(storeAgentName, status, {
+            startedAt: data.startedAt,
+            duration: data.duration,
+            error: data.error,
+            message: data.message || data.currentAction,
+            currentAction: data.currentAction || data.message,
+          });
+
+          // Update phase if needed
+          if (status === "running") {
+            const runningAgents = get().getRunningAgents();
+            if (runningAgents.length > 1) {
+              setPhase(
+                "analysis",
+                `Running ${runningAgents.length} agents in parallel...`,
+              );
+            }
+          }
+
+          // Add activity
+          addActivity({
+            type: status === "error" ? "error" : "agent_status",
+            agent: displayName,
+            message:
+              data.error ||
+              data.currentAction ||
+              data.message ||
+              `${displayName}: ${status}`,
+          });
         }
-        addActivity({
-          type: 'agent_start',
-          agent: agentName || 'system',
-          message: data.currentAction || `${agentName}: ${data.status}`
-        })
-        break
+        break;
       }
 
-      // ── Backend: memory.addBug/addRefactor/setDocumentation → "agent_finding" ──
-      // data shape: { type: 'bug'|'refactor'|'documentation', data: {...} }
-      case 'agent_finding': {
-        const updates = {}
-        let activityMessage = ''
-        let findingAgent = ''
+      // ── Phase Complete (New Event for Parallel) ──
+      case "phase_complete": {
+        const { phase, agentsCompleted, agentsFailed, duration } = data;
 
-        if (data.type === 'bug') {
-          const currentBugs = get().securitySummary?.bugs || []
+        // Update phase
+        if (phase === "analysis") {
+          setPhase("fix", "Analysis phase complete, starting fix agent...");
+        } else if (phase === "fix") {
+          setPhase("complete", "All agents complete!");
+        } else if (phase === "coordinator") {
+          setPhase(
+            "analysis",
+            "Coordinator complete, starting parallel analysis...",
+          );
+        }
+
+        // Log activity
+        const successCount = agentsCompleted?.length || 0;
+        const failCount = agentsFailed?.length || 0;
+        const durationSec = duration ? `${(duration / 1000).toFixed(1)}s` : "";
+
+        addActivity({
+          type: "phase",
+          agent: "system",
+          message: `Phase "${phase}" complete: ${successCount} succeeded, ${failCount} failed ${durationSec}`,
+        });
+
+        // Mark completed agents
+        if (agentsCompleted) {
+          agentsCompleted.forEach((agent) => {
+            setAgentStatus(agent, "complete", { duration });
+          });
+        }
+
+        // Mark failed agents
+        if (agentsFailed) {
+          agentsFailed.forEach((agent) => {
+            setAgentStatus(agent, "error", { error: "Agent failed" });
+          });
+        }
+        break;
+      }
+
+      // ── Agent Finding ──
+      case "agent_finding": {
+        const updates = {};
+        let activityMessage = "";
+        let findingAgent = "";
+
+        if (data.type === "bug") {
+          const currentBugs = get().securitySummary?.bugs || [];
           updates.securitySummary = {
             ...get().securitySummary,
             bugs: [...currentBugs, data.data],
-            totalIssues: currentBugs.length + 1
-          }
-          findingAgent = 'security'
-          activityMessage = `Found bug: ${data.data?.title || data.data?.message || 'Security issue'}`
-        } else if (data.type === 'refactor') {
-          const currentRefactors = get().architectureResult?.refactors || []
+            totalIssues: currentBugs.length + 1,
+          };
+          findingAgent = "security";
+          activityMessage = `Found bug: ${data.data?.title || data.data?.message || "Security issue"}`;
+        } else if (data.type === "refactor") {
+          const currentRefactors = get().architectureResult?.refactors || [];
           updates.architectureResult = {
             ...get().architectureResult,
-            refactors: [...currentRefactors, data.data]
-          }
-          findingAgent = 'architecture'
-          activityMessage = `Found: ${data.data?.title || data.data?.suggestion || 'Refactor suggestion'}`
-        } else if (data.type === 'documentation') {
-          updates.writerResult = data.data
-          findingAgent = 'writer'
-          activityMessage = 'Documentation generated'
-          updateAgent('writer', { status: 'complete', result: data.data })
-        }
-
-        set(updates)
-        addActivity({
-          type: 'result',
-          agent: findingAgent || 'system',
-          message: activityMessage
-        })
-        break
-      }
-
-      // ── Backend: memory.addMessage → "agent_communication" ──
-      // data shape: { fromAgent, toAgent, content, type }
-      case 'agent_communication':
-        addActivity({
-          type: 'info',
-          agent: data.fromAgent || 'system',
-          message: `→ ${data.toAgent}: ${(data.content || '').substring(0, 120)}`
-        })
-        break
-
-      // ── Backend: memory.setPlan → "coordinator_plan" ──
-      // data shape: { plan: {...} }
-      case 'coordinator_plan':
-        set({ plan: data.plan || data })
-        setPipelinePhase('planning', 'Execution plan created')
-        updateAgent('coordinator', { status: 'complete', result: data.plan || data })
-        addActivity({
-          type: 'plan',
-          agent: 'coordinator',
-          message: data.plan?.planSummary || 'Created analysis execution plan'
-        })
-        break
-
-      // ── Backend: memory.setStatus → "session_status" ──
-      // data shape: { status: 'complete'|'error', sessionId }
-      // NOTE: backend sends 'complete' (NOT 'completed')
-      case 'session_status':
-        if (data.status === 'complete') {
-          set({ endTime: Date.now() })
-          setPipelinePhase('compiling', 'Waiting for final results...')
-          addActivity({
-            type: 'system',
-            agent: 'system',
-            message: 'Analysis completed, compiling results...'
-          })
-        } else if (data.status === 'error') {
-          set({
-            error: data.error || 'An error occurred',
-            isAnalyzing: false,
-            endTime: Date.now()
-          })
-          setPipelinePhase('error', data.error || 'An error occurred')
-          addActivity({
-            type: 'error',
-            agent: 'system',
-            message: data.error || 'An error occurred'
-          })
-        } else if (data.status === 'analyzing') {
-          setPipelinePhase('analyzing', 'Agents are analyzing...')
-        }
-        break
-
-      // ── Backend: sseEmitter sends "analysis_complete" with memory.getSnapshot() ──
-      // data shape: full snapshot { bugs, documentation, refactors, plan, agentStatuses, ... }
-      case 'analysis_complete': {
-        const snapshot = data;
-        const updates = {};
-
-        if (snapshot.bugs) {
-          const bugs = snapshot.bugs || [];
-          const summary = snapshot.securitySummary || {};
-          updates.securitySummary = {
-            ...summary,
-            bugs,
-            totalIssues: bugs.length || summary.totalIssues || 0
+            refactors: [...currentRefactors, data.data],
           };
-          updateAgent('security', { status: 'complete' });
-        }
-
-        if (snapshot.documentation) {
-          updates.writerResult = snapshot.documentation;
-          updateAgent('writer', { status: 'complete' });
-        }
-
-        if (snapshot.refactors || snapshot.architectureResult) {
-          const archResult = snapshot.architectureResult || {};
-          const refactors = snapshot.refactors || [];
-          const patterns = snapshot.patternAnalysis || null;
-          updates.architectureResult = {
-            ...archResult,
-            refactors,
-            patternAnalysis: patterns || archResult.patternAnalysis || null
-          };
-          updateAgent('architecture', { status: 'complete' });
-        }
-
-        if (snapshot.plan) {
-          updates.plan = snapshot.plan;
-        }
-
-        if (snapshot.compilationResult) {
-          updates.compilationResult = snapshot.compilationResult;
+          findingAgent = "architecture";
+          activityMessage = `Found: ${data.data?.title || data.data?.suggestion || "Refactor suggestion"}`;
+        } else if (data.type === "documentation") {
+          updates.writerResult = data.data;
+          findingAgent = "docs";
+          activityMessage = "Documentation generated";
+          setAgentStatus("docs", "complete", { result: data.data });
         }
 
         set(updates);
         addActivity({
-          type: 'system',
-          agent: 'system',
-          message: 'Analysis snapshot received'
+          type: "result",
+          agent: findingAgent || "system",
+          message: activityMessage,
         });
         break;
       }
 
-      // ── Backend: analyzeRoute sends "final_results" as last event before res.end() ──
-      // data shape: the full compiled results object from runAnalysisPipeline
-      case 'final_results': {
-        const results = data
-        const finalUpdates = { endTime: Date.now() }
-
-        // Extract results from whatever shape the pipeline returns
-        if (results.security) {
-          // Merge summary AND bugs into securitySummary so the frontend can read both
-          const summary = results.security.summary || {}
-          const bugs = results.security.bugs || []
-          finalUpdates.securitySummary = {
-            ...summary,
-            bugs,
-            totalIssues: bugs.length || summary.totalIssues || 0
-          }
-          updateAgent('security', { status: 'complete', result: results.security })
-        }
-        if (results.documentation || results.writer) {
-          finalUpdates.writerResult = results.documentation || results.writer
-          updateAgent('writer', { status: 'complete', result: results.documentation || results.writer })
-        }
-        if (results.architecture) {
-          // Merge result, refactors, and patterns into architectureResult
-          const archResult = results.architecture.result || {}
-          const refactors = results.architecture.refactors || []
-          const patterns = results.architecture.patterns || null
-          finalUpdates.architectureResult = {
-            ...archResult,
-            refactors,
-            patternAnalysis: patterns || archResult.patternAnalysis || null
-          }
-          updateAgent('architecture', { status: 'complete', result: results.architecture })
-        }
-        if (results.compilation || results.summary) {
-          finalUpdates.compilationResult = results.compilation || results.summary
-        }
-
-        // Also handle flat snapshot shape (from getSnapshot)
-        if (results.bugs && !results.security) {
-          finalUpdates.securitySummary = {
-            ...(get().securitySummary || {}),
-            bugs: results.bugs,
-            totalIssues: results.bugs.length
-          }
-        }
-        if (results.refactors && !results.architecture) {
-          finalUpdates.architectureResult = {
-            ...(get().architectureResult || {}),
-            refactors: results.refactors
-          }
-        }
-
-        set(finalUpdates)
-        setPipelinePhase('complete', 'Analysis complete!')
-        set({ isAnalyzing: false })
-
+      // ── Agent Communication ──
+      case "agent_communication":
         addActivity({
-          type: 'system',
-          agent: 'system',
-          message: '✅ Analysis complete — results are ready!'
-        })
+          type: "info",
+          agent: data.fromAgent || "system",
+          message: `→ ${data.toAgent}: ${(data.content || "").substring(0, 120)}`,
+        });
+        break;
 
-        // Auto-save
-        setTimeout(() => saveAnalysisToBackend(), 100)
+      // ── Coordinator Plan ──
+      case "coordinator_plan":
+        set({ plan: data.plan || data });
+        setAgentStatus("coordinator", "complete", {
+          result: data.plan || data,
+        });
+        addActivity({
+          type: "plan",
+          agent: "coordinator",
+          message: data.plan?.planSummary || "Created analysis execution plan",
+        });
+        break;
+
+      // ── Session Status ──
+      case "session_status":
+        if (data.status === "complete") {
+          set({ endTime: Date.now() });
+          setPhase("complete", "Analysis complete!");
+          addActivity({
+            type: "system",
+            agent: "system",
+            message: "Analysis completed",
+          });
+        } else if (data.status === "error") {
+          set({
+            error: data.error || "An error occurred",
+            isAnalyzing: false,
+            endTime: Date.now(),
+          });
+          setPhase("error", data.error || "An error occurred");
+          addActivity({
+            type: "error",
+            agent: "system",
+            message: data.error || "An error occurred",
+          });
+        }
+        break;
+
+      // ── Analysis Complete (Snapshot) ──
+      case "analysis_complete": {
+        const snapshot = data;
+        const updates = {};
+
+        if (snapshot.bugs) {
+          updates.securitySummary = {
+            ...(get().securitySummary || {}),
+            bugs: snapshot.bugs,
+            totalIssues: snapshot.bugs.length,
+          };
+          setAgentStatus("security", "complete");
+        }
+
+        if (snapshot.documentation) {
+          updates.writerResult = snapshot.documentation;
+          setAgentStatus("docs", "complete");
+        }
+
+        if (snapshot.refactors || snapshot.architectureResult) {
+          updates.architectureResult = {
+            ...(snapshot.architectureResult || {}),
+            refactors: snapshot.refactors || [],
+            patternAnalysis: snapshot.patternAnalysis || null,
+          };
+          setAgentStatus("architecture", "complete");
+        }
+
+        if (snapshot.plan) updates.plan = snapshot.plan;
+        if (snapshot.compilationResult)
+          updates.compilationResult = snapshot.compilationResult;
+
+        set(updates);
         break;
       }
 
-      // ── Backend: sseEmitter sends "session_error" ──
-      case 'session_error':
+      // ── Pipeline Complete ──
+      case "pipeline_complete": {
         set({
-          error: data.error || 'An error occurred',
+          endTime: Date.now(),
+          pipelineDuration: data.duration,
+        });
+        setPhase("complete", "Pipeline complete!");
+        set({ isAnalyzing: false });
+
+        addActivity({
+          type: "system",
+          agent: "system",
+          message: `✅ Pipeline complete! ${data.agentsCompleted?.length || 0} agents succeeded, ${data.agentsFailed?.length || 0} failed`,
+        });
+
+        // Auto-save
+        setTimeout(() => saveAnalysisToBackend(), 100);
+        break;
+      }
+
+      // ── Final Results ──
+      case "final_results": {
+        const results = data;
+        const finalUpdates = { endTime: Date.now() };
+
+        if (results.security) {
+          finalUpdates.securitySummary = {
+            ...(results.security.summary || {}),
+            bugs: results.security.bugs || [],
+            totalIssues: results.security.bugs?.length || 0,
+          };
+          setAgentStatus("security", "complete");
+        }
+
+        if (results.documentation || results.writer) {
+          finalUpdates.writerResult = results.documentation || results.writer;
+          setAgentStatus("docs", "complete");
+        }
+
+        if (results.architecture) {
+          finalUpdates.architectureResult = {
+            ...(results.architecture.result || {}),
+            refactors: results.architecture.refactors || [],
+            patternAnalysis: results.architecture.patterns || null,
+          };
+          setAgentStatus("architecture", "complete");
+        }
+
+        if (results.fix) {
+          finalUpdates.fixResult = results.fix;
+          setAgentStatus("fix", "complete");
+        }
+
+        if (results.custom) {
+          finalUpdates.customResult = results.custom;
+          setAgentStatus("custom", "complete");
+        }
+
+        if (results.compilation) {
+          finalUpdates.compilationResult = results.compilation;
+        }
+
+        set(finalUpdates);
+        setPhase("complete", "Analysis complete!");
+        set({ isAnalyzing: false });
+
+        addActivity({
+          type: "system",
+          agent: "system",
+          message: "✅ Analysis complete — results are ready!",
+        });
+
+        setTimeout(() => saveAnalysisToBackend(), 100);
+        break;
+      }
+
+      // ── Errors ──
+      case "session_error":
+      case "error":
+        set({
+          error: data.message || data.error || "An error occurred",
           isAnalyzing: false,
-          endTime: Date.now()
-        })
-        setPipelinePhase('error', data.error || 'An error occurred')
+          endTime: Date.now(),
+        });
+        setPhase("error", data.message || data.error);
         addActivity({
-          type: 'error',
-          agent: 'system',
-          message: data.error || 'An error occurred'
-        })
-        break
+          type: "error",
+          agent: "system",
+          message: data.message || data.error,
+        });
+        break;
 
-      // ── Backend: analyzeRoute sends "error" on catch ──
-      case 'error':
-        set({
-          error: data.message || data.error || 'An error occurred',
-          isAnalyzing: false
-        })
-        setPipelinePhase('error', data.message || data.error)
+      // ── Fix Events ──
+      case "fix_start":
+        setAgentStatus("fix", "running", {
+          message: `Fixing bug ${data.current}/${data.total}`,
+          currentAction: `Fixing ${data.file}:${data.line}`,
+        });
+        break;
+
+      case "fix_complete":
         addActivity({
-          type: 'error',
-          agent: 'system',
-          message: data.message || data.error
-        })
-        break
+          type: "result",
+          agent: "fix",
+          message: `Fixed bug in ${data.file}`,
+        });
+        break;
 
-      // ── Backend: sseEmitter "memory_update" for key updates ──
-      case 'memory_update':
-        // Optional: handle specific key updates if needed
-        break
+      case "fix_failed":
+        addActivity({
+          type: "error",
+          agent: "fix",
+          message: `Failed to fix ${data.file}: ${data.error}`,
+        });
+        break;
+
+      // ── Token Usage Event ──
+      case "token_usage": {
+        const { agent, promptTokens, completionTokens } = data;
+        get().addTokenUsage(agent, promptTokens, completionTokens);
+        break;
+      }
 
       default:
-        console.log('[AgentStore] Unhandled event:', eventName, data)
-        break
+        console.log("[AgentStore] Unhandled event:", eventName, data);
+        break;
     }
   },
+}));
 
-  // Reset to initial state
-  resetPipeline: () => {
-    set({
-      ...initialState,
-      activityLog: [{
-        id: Date.now(),
-        timestamp: new Date().toISOString(),
-        type: 'system',
-        agent: 'system',
-        message: 'Ready for new analysis'
-      }]
-    })
-  },
-
-  // Alias for backward compatibility
-  reset: () => {
-    get().resetPipeline()
-  }
-}))
-
-export default useAgentStore
-
-
-// Code V2 End
+export default useAgentStore;

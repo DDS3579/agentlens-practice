@@ -113,9 +113,9 @@ function useAuth() {
     // From our backend (via authStore)
     userProfile,
     usageStats,
-    isPro: isPro(),
-    canRunAnalysis: canRunAnalysis(),
-    analysesRemaining: analysesRemaining(),
+    isPro,
+    canRunAnalysis,
+    analysesRemaining,
     isLoadingProfile,
     refreshProfile,
   }

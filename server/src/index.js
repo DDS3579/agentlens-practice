@@ -48,8 +48,7 @@ app.use(generalLimiter);
 const analyzeLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 10,
-  message: { error: 'Analysis rate limit exceeded. Please wait before analyzing again.' },
-  keyGenerator: (req) => req.headers.authorization || req.ip,
+  message: { error: 'Analysis rate limit exceeded. Please wait before analyzing again.' }
 });
 app.use('/api/analyze', analyzeLimiter);
 

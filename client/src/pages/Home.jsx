@@ -10,7 +10,7 @@ export default function Home() {
   const agents = useAgentStore((state) => state.agents);
   const bugs = useAgentStore((state) => state.bugs);
   const refactors = useAgentStore((state) => state.refactors);
-  const pipelinePhase = useAgentStore((state) => state.pipelinePhase);
+  const pipelinePhase = useAgentStore((state) => state.currentPhase);
   const compilationResult = useAgentStore((state) => state.compilationResult);
   const documentationMeta = useAgentStore((state) => state.documentationMeta);
   const documentation = useAgentStore((state) => state.documentation);

@@ -4,6 +4,7 @@
 import { useCallback, useRef } from 'react';
 import useFixStore from '../store/fixStore.js';
 import useAuth from './useAuth.js';
+import { apiFetch } from '../lib/apiClient.js';
 
 export function useFixStream() {
   const abortRef = useRef(null);
@@ -155,12 +156,8 @@ export function useFixStream() {
       // Start fixing state
       fixStore.startFixing(1);
 
-      const response = await fetch('/api/fix/single', {
+      const response = await apiFetch('/api/fix/single', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
         body: JSON.stringify({
           bugId: bug.id,
           bug,
@@ -168,7 +165,7 @@ export function useFixStream() {
           analysisId
         }),
         signal: abortRef.current.signal
-      });
+      }, token);
 
       if (!response.ok) {
         throw new Error(`HTTP error: ${response.status}`);
@@ -202,19 +199,15 @@ export function useFixStream() {
       // Start fixing state with total count
       fixStore.startFixing(bugs.length);
 
-      const response = await fetch('/api/fix/all', {
+      const response = await apiFetch('/api/fix/all', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
         body: JSON.stringify({
           bugs,
           fileContents,
           analysisId
         }),
         signal: abortRef.current.signal
-      });
+      }, token);
 
       if (!response.ok) {
         throw new Error(`HTTP error: ${response.status}`);

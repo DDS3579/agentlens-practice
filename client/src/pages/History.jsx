@@ -156,15 +156,15 @@ export default function History() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-950 pt-20 px-4 pb-12">
+      <div className="min-h-[calc(100vh-3.5rem)] p-6 lg:p-8">
         <div className="max-w-6xl mx-auto">
           <FadeIn>
-            <Card className="bg-red-500/10 border border-red-500/30">
+            <Card className="bg-red-500/10 border-red-500/30">
               <CardContent className="p-6 text-center">
                 <XCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-red-400 mb-2">Failed to load history</h3>
+                <h3 className="text-xl font-semibold font-display text-red-400 mb-2">Failed to load history</h3>
                 <p className="text-gray-400 mb-4">{error}</p>
-                <Button onClick={fetchHistory} variant="outline" className="border-red-500/30 text-red-400 hover:bg-red-500/10">
+                <Button onClick={fetchHistory} variant="outline" className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-400">
                   <Loader2 className="w-4 h-4 mr-2" />
                   Retry
                 </Button>
@@ -177,13 +177,13 @@ export default function History() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 pt-20 px-4 pb-12">
+    <div className="min-h-[calc(100vh-3.5rem)] p-6 lg:p-8">
       <div className="max-w-6xl mx-auto">
         <FadeIn>
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <h1 className="text-3xl font-display font-bold text-white">Analysis History</h1>
+              <h1 className="text-3xl font-display font-bold text-foreground">Analysis History</h1>
               <Badge className="bg-purple-500/20 text-purple-400 border border-purple-500/30">
                 {analyses.length} total
               </Badge>
@@ -197,13 +197,13 @@ export default function History() {
               animate={{ opacity: 1, y: 0 }}
               className="mb-6"
             >
-              <Card className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-2 border-purple-500/30">
+              <Card className="bg-gradient-to-r from-violet-500/10 to-pink-500/10 border-violet-500/20">
                 <CardContent className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Zap className="w-5 h-5 text-purple-400" />
                     <div>
-                      <p className="text-white font-medium">You're on the Free plan</p>
-                      <p className="text-gray-400 text-sm">Showing last 3 analyses. Upgrade to Pro for unlimited history.</p>
+                      <p className="text-foreground font-medium">You're on the Free plan</p>
+                      <p className="text-muted-foreground text-sm">Showing last 3 analyses. Upgrade to Pro for unlimited history.</p>
                     </div>
                   </div>
                   <Button asChild className="bg-purple-600 hover:bg-purple-700">
@@ -220,25 +220,25 @@ export default function History() {
           {/* Stats Row */}
           {analyses.length > 0 && (
             <div className="grid grid-cols-3 gap-4 mb-6">
-              <Card className="bg-gray-900 border border-white/10">
+              <Card className="border-border/50">
                 <CardContent className="p-4 text-center">
-                  <p className="text-gray-400 text-sm mb-1">Total Analyses</p>
-                  <p className="text-2xl font-bold text-white">
+                  <p className="text-muted-foreground text-sm mb-1">Total Analyses</p>
+                  <p className="text-2xl font-bold text-foreground">
                     <CountUp end={analyses.length} />
                   </p>
                 </CardContent>
               </Card>
-              <Card className="bg-gray-900 border border-white/10">
+              <Card className="border-border/50">
                 <CardContent className="p-4 text-center">
-                  <p className="text-gray-400 text-sm mb-1">Bugs Found</p>
-                  <p className="text-2xl font-bold text-red-400">
+                  <p className="text-muted-foreground text-sm mb-1">Bugs Found</p>
+                  <p className="text-2xl font-bold text-red-400 tracking-tight">
                     <CountUp end={totalBugs} />
                   </p>
                 </CardContent>
               </Card>
-              <Card className="bg-gray-900 border border-white/10">
+              <Card className="border-border/50">
                 <CardContent className="p-4 text-center">
-                  <p className="text-gray-400 text-sm mb-1">Avg Duration</p>
+                  <p className="text-muted-foreground text-sm mb-1">Avg Duration</p>
                   <p className="text-2xl font-bold text-purple-400">
                     <CountUp end={avgDuration} suffix="s" />
                   </p>
@@ -255,7 +255,7 @@ export default function History() {
                 placeholder="Search by repo name or URL..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-gray-900 border-white/10 text-white placeholder:text-gray-500"
+                className="pl-10 bg-card border-border/50 text-foreground placeholder:text-muted-foreground"
               />
               {isSearching && (
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
@@ -273,8 +273,8 @@ export default function History() {
                   onClick={() => setStatusFilter(filter)}
                   className={`capitalize ${
                     statusFilter === filter
-                      ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700'
-                      : 'bg-gray-900 text-gray-400 border-white/10 hover:bg-gray-800'
+                      ? 'bg-primary text-primary-foreground border-primary hover:bg-primary/90'
+                      : 'bg-card text-muted-foreground border-border/50 hover:bg-accent'
                   }`}
                 >
                   {filter}
@@ -295,20 +295,20 @@ export default function History() {
           {/* Empty State */}
           {!isLoading && displayedAnalyses.length === 0 && (
             <FadeIn>
-              <Card className="bg-gray-900 border border-white/10">
+              <Card className="border-border/50">
                 <CardContent className="p-12 text-center">
                   {searchQuery ? (
                     <>
                       <Search className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-                      <h3 className="text-xl font-semibold text-white mb-2">No analyses match your search</h3>
-                      <p className="text-gray-400 mb-4">Try adjusting your search query or filters</p>
+                      <h3 className="text-xl font-semibold font-display text-foreground mb-2">No analyses match your search</h3>
+                      <p className="text-muted-foreground mb-4">Try adjusting your search query or filters</p>
                       <Button
                         variant="outline"
                         onClick={() => {
                           setSearchQuery('')
                           setStatusFilter('all')
                         }}
-                        className="border-white/10 text-gray-300 hover:bg-gray-800"
+                        className="border-border/50 text-muted-foreground hover:bg-accent"
                       >
                         Clear filters
                       </Button>
@@ -316,9 +316,9 @@ export default function History() {
                   ) : (
                     <>
                       <BarChart2 className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-                      <h3 className="text-xl font-semibold text-white mb-2">No analyses yet</h3>
-                      <p className="text-gray-400 mb-4">Start analyzing repositories to see your history here</p>
-                      <Button asChild className="bg-purple-600 hover:bg-purple-700">
+                      <h3 className="text-xl font-semibold font-display text-foreground mb-2">No analyses yet</h3>
+                      <p className="text-muted-foreground mb-4">Start analyzing repositories to see your history here</p>
+                      <Button asChild className="bg-primary hover:bg-primary/90">
                         <Link to="/dashboard">
                           Start your first analysis
                           <ChevronRight className="w-4 h-4 ml-1" />
@@ -345,7 +345,7 @@ export default function History() {
                     transition={{ delay: index * 0.05 }}
                   >
                     <Card
-                      className="bg-gray-900 border border-white/10 rounded-2xl p-6 hover:border-purple-500/30 transition-all cursor-pointer relative group"
+                      className="border-border/50 p-5 hover:border-violet-500/30 transition-all cursor-pointer relative group"
                       onClick={() => handleCardClick(analysis.id)}
                     >
                       {/* Delete Button */}
@@ -370,35 +370,35 @@ export default function History() {
 
                       {/* Row 1: Repo name, status, time */}
                       <div className="flex items-center gap-3 mb-2 pr-20">
-                        <h3 className="text-lg font-bold text-white truncate">
+                        <h3 className="text-lg font-bold text-foreground truncate">
                           {getRepoName(analysis)}
                         </h3>
                         {getStatusBadge(analysis.status)}
-                        <span className="text-gray-500 text-sm ml-auto whitespace-nowrap">
+                        <span className="text-muted-foreground text-sm ml-auto whitespace-nowrap">
                           {analysis.created_at && formatDistanceToNow(new Date(analysis.created_at), { addSuffix: true })}
                         </span>
                       </div>
 
                       {/* Row 2: Repo URL */}
                       {analysis.repo_url && (
-                        <p className="text-gray-500 text-sm font-mono truncate mb-4">
+                        <p className="text-muted-foreground/70 text-sm font-mono truncate mb-4">
                           {analysis.repo_url}
                         </p>
                       )}
 
-                      <Separator className="bg-white/10 mb-4" />
+                      <Separator className="mb-4 opacity-50" />
 
                       {/* Row 3: Stats */}
                       <div className="flex items-center gap-6 text-sm">
-                        <div className="flex items-center gap-2 text-gray-400">
+                        <div className="flex items-center gap-2 text-muted-foreground">
                           <Bug className="w-4 h-4 text-red-400" />
                           <span>{analysis.bug_count || 0} bugs</span>
                         </div>
-                        <div className="flex items-center gap-2 text-gray-400">
+                        <div className="flex items-center gap-2 text-muted-foreground">
                           <FileCode className="w-4 h-4 text-blue-400" />
                           <span>{analysis.file_count || 0} files</span>
                         </div>
-                        <div className="flex items-center gap-2 text-gray-400">
+                        <div className="flex items-center gap-2 text-muted-foreground">
                           <Clock className="w-4 h-4 text-yellow-400" />
                           <span>{formatDuration(analysis.duration_ms)}</span>
                         </div>

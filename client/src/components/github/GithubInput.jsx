@@ -3,7 +3,7 @@ import useAgentStore from '../../store/agentStore.js';
 import useAgentStream from '../../hooks/useAgentStream.js';
 
 export default function GithubInput({ onAnalysisStart }) {
-  const { isAnalyzing, pipelinePhase, pipelineMessage, setRepoUrl } = useAgentStore();
+  const { isAnalyzing, currentPhase: pipelinePhase, pipelineMessage, setRepoUrl } = useAgentStore();
   const { startAnalysis, cancelAnalysis } = useAgentStream();
 
   const [url, setUrl] = useState('');
