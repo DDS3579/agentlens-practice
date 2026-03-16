@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
-import { Github, Play, Bot, FileCheck, ArrowRight } from 'lucide-react';
+import { Github, Play, Bot, FileCheck } from 'lucide-react';
 
 // ─── Step Data ──────────────────────────────────────────────────────────────
 const STEPS = [

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Check, Zap, ArrowRight } from 'lucide-react';
+import { Check, Zap, ArrowRight, Rocket, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
@@ -36,37 +36,23 @@ const useScrollReveal = (elementRef, threshold = 0.3) => {
 };
 
 // ─── Feature List Item ──────────────────────────────────────────────────────
-const FeatureItem = ({ text, isPro = false, isHighlighted = false, index, isVisible }) => (
-  <AnimatePresence mode="wait">
-    {isVisible && (
-      <motion.li
-        className="flex items-start gap-3"
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: -20 }}
-        transition={{
-          duration: 0.4,
-          delay: index * 0.08,
-          ease: [0.25, 0.46, 0.45, 0.94],
-        }}
-      >
-        <div
-          className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
-            isPro ? 'bg-purple-500/20' : 'bg-gray-800'
-          }`}
-        >
-          <Check className={`w-3 h-3 ${isPro ? 'text-purple-400' : 'text-gray-400'}`} />
-        </div>
-        <span
-          className={`text-sm leading-relaxed ${
-            isHighlighted ? 'text-purple-400 font-medium' : 'text-gray-400'
-          }`}
-        >
-          {text}
-        </span>
-      </motion.li>
-    )}
-  </AnimatePresence>
+const FeatureItem = ({ text, isPro = false, isHighlighted = false }) => (
+  <li className="flex items-start gap-2.5">
+    <div
+      className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+        isPro ? 'bg-purple-500/20' : 'bg-gray-800'
+      }`}
+    >
+      <Check className={`w-2.5 h-2.5 ${isPro ? 'text-purple-400' : 'text-gray-400'}`} />
+    </div>
+    <span
+      className={`text-xs leading-relaxed ${
+        isHighlighted ? 'text-purple-400 font-medium' : 'text-gray-400'
+      }`}
+    >
+      {text}
+    </span>
+  </li>
 );
 
 // ─── Border Shimmer Effect for Pro Card ─────────────────────────────────────
@@ -85,8 +71,7 @@ const BorderShimmer = () => (
         ease: 'linear',
       }}
     />
-    {/* Inner mask to create border-only effect */}
-    <div className="absolute inset-[2px] rounded-[14px] bg-gray-900" 
+    <div className="absolute inset-[1.5px] rounded-[14px] bg-gray-900"
       style={{
         background: 'linear-gradient(to bottom, rgba(88, 28, 135, 0.5), rgb(17, 24, 39))',
       }}
@@ -94,386 +79,305 @@ const BorderShimmer = () => (
   </div>
 );
 
-// ─── Free Plan Card ─────────────────────────────────────────────────────────
-const FREE_FEATURES = [
-  '5 analyses per month',
-  'All 4 AI agents',
-  'Security vulnerability scanner',
-  'Documentation generator',
-  'Architecture review',
-  'Download markdown reports',
-  'Bring your own LLM (Ollama)',
+// ─── Plan Data ──────────────────────────────────────────────────────────────
+const PLANS = [
+  {
+    name: "Free",
+    price: "$0",
+    suffix: "/ month",
+    subtitle: "Perfect for exploring",
+    features: [
+      '5 analyses per month',
+      'All 4 AI agents',
+      'Security scanner',
+      'Docs generator',
+      'Architecture review',
+      'Markdown reports',
+      'BYO LLM (Ollama)',
+    ],
+    cta: "Get Started Free",
+    link: "/register",
+    isPro: false,
+    highlight: false
+  },
+  {
+    name: "Pro",
+    price: "$29",
+    suffix: "/ month",
+    subtitle: "For serious developers",
+    features: [
+      { text: 'Everything in Free', highlighted: false },
+      { text: 'Unlimited analyses', highlighted: false },
+      { text: 'Auto-Fix Agent', highlighted: true },
+      { text: 'GitHub PR creation', highlighted: false },
+      { text: '50 files per analysis', highlighted: false },
+      { text: 'Unlimited history', highlighted: false },
+      { text: 'OpenAI / Anthropic', highlighted: false },
+    ],
+    cta: "Upgrade to Pro",
+    isPro: true,
+    highlight: true,
+    badge: "Most Popular"
+  },
+  {
+    name: "Team",
+    price: "$19",
+    suffix: "/ seat",
+    subtitle: "Collaboration mode",
+    features: [
+      'Everything in Pro',
+      'Unlimited members',
+      'Shared workspace',
+      'RBAC controls',
+      'Team analytics',
+      'Priority support',
+      'Custom AI training',
+    ],
+    cta: "Get Team Access",
+    isPro: false,
+    highlight: false
+  },
+  {
+    name: "Enterprise",
+    price: "Custom",
+    suffix: "",
+    subtitle: "Organization grade",
+    features: [
+      'Everything in Team',
+      'SSO & SAML',
+      'Custom deployment',
+      'Account manager',
+      'SLA guarantees',
+      'Security auditing',
+      'White-glove onboarding',
+    ],
+    cta: "Talk to Sales",
+    isPro: false,
+    highlight: false
+  }
 ];
 
-const FreePlanCard = ({ isVisible }) => (
-  <AnimatePresence mode="wait">
-    {isVisible && (
-      <motion.div
-        className="relative h-full"
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -40 }}
-        transition={{
-          duration: 0.6,
-          ease: [0.25, 0.46, 0.45, 0.94],
-        }}
-      >
-        <motion.div
-          className="relative bg-gray-900 border border-white/10 rounded-2xl p-8 h-full flex flex-col"
-          whileHover={{ y: -4 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-        >
-          {/* Plan Header */}
-          <div className="mb-8">
-            <h3 className="text-white text-xl font-semibold font-display mb-4">Free</h3>
-            <div className="flex items-baseline gap-1 mb-2">
-              <span className="text-white text-5xl font-bold font-display">$0</span>
-              <span className="text-gray-400 text-base">/ month</span>
-            </div>
-            <p className="text-gray-500 text-sm">Perfect for exploring</p>
-          </div>
-
-          {/* Divider */}
-          <div className="h-px bg-white/5 mb-6" />
-
-          {/* Features */}
-          <ul className="space-y-3 mb-8 flex-1">
-            {FREE_FEATURES.map((feature, i) => (
-              <FeatureItem key={feature} text={feature} index={i} isVisible={isVisible} />
-            ))}
-          </ul>
-
-          {/* CTA */}
-          <Link to="/register" className="w-full">
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-            >
-              <Button
-                variant="outline"
-                className="w-full py-6 border-white/20 text-white hover:bg-white/10 rounded-xl text-base font-medium group"
-              >
-                Get Started Free
-                <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
-              </Button>
-            </motion.div>
-          </Link>
-        </motion.div>
-      </motion.div>
-    )}
-  </AnimatePresence>
-);
-
-// ─── Pro Plan Card ──────────────────────────────────────────────────────────
-const PRO_FEATURES = [
-  { text: 'Everything in Free', highlighted: false },
-  { text: 'Unlimited analyses', highlighted: false },
-  { text: 'Auto-Fix Agent ', highlighted: true },
-  { text: 'GitHub PR creation', highlighted: false },
-  { text: '50 files per analysis', highlighted: false },
-  { text: 'Unlimited history', highlighted: false },
-  { text: 'OpenAI / Anthropic support', highlighted: false },
-  { text: 'Priority support', highlighted: false },
-];
-
-const ProPlanCard = ({ isVisible }) => {
+// ─── Individual Plan Card ────────────────────────────────────────────────────
+const PlanCard = ({ plan, index }) => {
   const [showComingSoon, setShowComingSoon] = useState(false);
 
   return (
-    <AnimatePresence mode="wait">
-      {isVisible && (
-        <motion.div
-          className="relative h-full"
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -40 }}
-          transition={{
-            duration: 0.6,
-            ease: [0.25, 0.46, 0.45, 0.94],
-          }}
-        >
-          {/* "Most Popular" Badge */}
-          <motion.div
-            className="absolute -top-3 right-6 z-20"
-            initial={{ opacity: 0, scale: 0.8, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8, y: -10 }}
-            transition={{
-              duration: 0.4,
-              delay: 0.2,
-              type: 'spring',
-              stiffness: 400,
-              damping: 20,
-            }}
-          >
-            <Badge className="bg-purple-600 text-white border-0 px-3 py-1 text-xs font-semibold shadow-lg shadow-purple-500/30">
-              Most Popular
+    <motion.div
+      className="min-w-[280px] w-[280px] h-[520px] flex-shrink-0"
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: index * 0.1 }}
+    >
+      <div className="relative h-full overflow-hidden rounded-2xl bg-gray-900 border border-white/5 flex flex-col p-6 shadow-xl transition-all duration-300 hover:border-purple-500/30 group">
+        {plan.badge && (
+          <div className="absolute top-4 right-4 z-20">
+            <Badge className="bg-purple-600 text-[10px] px-2 py-0.5 border-0 shadow-lg shadow-purple-500/20">
+              {plan.badge}
             </Badge>
-          </motion.div>
+          </div>
+        )}
 
-          <motion.div
-            className="relative overflow-hidden rounded-2xl h-full"
-            whileHover={{ scale: 1.02 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-          >
-            {/* Shimmer border effect */}
-            <BorderShimmer />
+        {plan.highlight && <BorderShimmer />}
 
-            {/* Activation pulse */}
-            <motion.div
-              className="absolute inset-0 rounded-2xl pointer-events-none z-10"
-              initial={{ boxShadow: '0 0 0 0 rgba(139, 92, 246, 0)' }}
-              animate={{
-                boxShadow: [
-                  '0 0 0 0 rgba(139, 92, 246, 0)',
-                  '0 0 30px 5px rgba(139, 92, 246, 0.3)',
-                  '0 0 60px 10px rgba(139, 92, 246, 0.15)',
-                  '0 0 0 0 rgba(139, 92, 246, 0)',
-                ],
-              }}
-              transition={{
-                duration: 1.5,
-                delay: 0.4,
-                ease: 'easeOut',
-              }}
-            />
-
-            {/* Card content */}
-            <div
-              className="relative z-10 border-2 border-purple-500 rounded-2xl p-8 h-full flex flex-col"
-              style={{
-                background: 'linear-gradient(to bottom, rgba(88, 28, 135, 0.5), rgb(17, 24, 39))',
-              }}
-            >
-              {/* Plan Header */}
-              <div className="mb-8">
-                <div className="flex items-center gap-2 mb-4">
-                  <h3 className="text-white text-xl font-semibold font-display">Pro</h3>
-                  <Zap className="w-5 h-5 text-purple-400" />
-                </div>
-                <div className="flex items-baseline gap-1 mb-2">
-                  <span className="text-white text-5xl font-bold font-display">$29</span>
-                  <span className="text-gray-400 text-base">/ month</span>
-                </div>
-                <p className="text-gray-500 text-sm">For serious developers</p>
-              </div>
-
-              {/* Divider */}
-              <div className="h-px bg-purple-500/20 mb-6" />
-
-              {/* Features */}
-              <ul className="space-y-3 mb-8 flex-1">
-                {PRO_FEATURES.map((feature, i) => (
-                  <FeatureItem
-                    key={feature.text}
-                    text={feature.text}
-                    isPro
-                    isHighlighted={feature.highlighted}
-                    index={i}
-                    isVisible={isVisible}
-                  />
-                ))}
-              </ul>
-
-              {/* CTA */}
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-              >
-                <Button
-                  onClick={() => setShowComingSoon(!showComingSoon)}
-                  className="w-full py-6 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-base font-medium shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-shadow group"
-                >
-                  <Zap className="w-4 h-4 mr-2" />
-                  Upgrade to Pro
-                </Button>
-              </motion.div>
-
-              {/* Coming Soon Message */}
-              <AnimatePresence>
-                {showComingSoon && (
-                  <motion.div
-                    className="mt-4 bg-purple-950 border border-purple-500/50 rounded-xl p-4"
-                    initial={{ opacity: 0, y: -10, height: 0, marginTop: 0 }}
-                    animate={{ opacity: 1, y: 0, height: 'auto', marginTop: 16 }}
-                    exit={{ opacity: 0, y: -10, height: 0, marginTop: 0 }}
-                    transition={{ duration: 0.3, ease: 'easeOut' }}
-                  >
-                    <p className="text-purple-200 text-sm leading-relaxed">
-                      🚀 Payment processing coming soon! This is a hackathon demo. Contact us at{' '}
-                      <a
-                        href="mailto:agentlens@demo.com"
-                        className="text-purple-400 hover:text-purple-300 underline underline-offset-2 transition-colors"
-                      >
-                        agentlens@demo.com
-                      </a>{' '}
-                      to get Pro access.
-                    </p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+        <div className="relative z-10 flex flex-col h-full">
+          <div className="mb-6">
+            <h3 className={`text-lg font-semibold font-display mb-2 ${plan.highlight ? 'text-white' : 'text-gray-300'}`}>
+              {plan.name}
+            </h3>
+            <div className="flex items-baseline gap-1 mb-1">
+              <span className="text-white text-3xl font-bold font-display">{plan.price}</span>
+              <span className="text-gray-500 text-xs">{plan.suffix}</span>
             </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+            <p className="text-gray-500 text-[11px]">{plan.subtitle}</p>
+          </div>
+
+          <div className={`h-px mb-6 ${plan.highlight ? 'bg-purple-500/20' : 'bg-white/5'}`} />
+
+          <ul className="space-y-2.5 mb-6 flex-1 overflow-hidden">
+            {plan.features.map((feature, i) => (
+              <FeatureItem 
+                key={i} 
+                text={typeof feature === 'string' ? feature : feature.text} 
+                isPro={plan.isPro}
+                isHighlighted={typeof feature === 'object' ? feature.highlighted : false}
+              />
+            ))}
+          </ul>
+
+          <div className="mt-auto">
+            {plan.link ? (
+              <Link to={plan.link}>
+                <Button variant="outline" className="w-full py-5 text-xs font-medium border-white/10 text-white hover:bg-white/5 transition-all">
+                  {plan.cta}
+                  <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                </Button>
+              </Link>
+            ) : (
+              <div className="relative">
+                <Button 
+                  onClick={() => setShowComingSoon(!showComingSoon)}
+                  className={`w-full py-5 text-xs font-medium transition-all ${
+                    plan.name === 'Enterprise' 
+                      ? 'bg-gray-800 hover:bg-gray-700 text-gray-300' 
+                      : 'bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-500/20'
+                  }`}
+                >
+                  {plan.name === 'Enterprise' ? 'Contact Sales' : plan.cta}
+                  {plan.isPro && <Zap className="w-3.5 h-3.5 ml-1.5 fill-current" />}
+                </Button>
+
+                <AnimatePresence>
+                  {showComingSoon && plan.isPro && (
+                    <motion.div
+                      className="absolute bottom-full left-0 right-0 mb-2 bg-purple-950/90 backdrop-blur-md border border-purple-500/30 rounded-lg p-3 z-30"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                    >
+                      <p className="text-[10px] text-purple-200 text-center flex items-center justify-center gap-1.5">
+                        <Rocket className="w-3 h-3 text-purple-400" />
+                        Processing coming soon!
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </motion.div>
   );
 };
 
 // ─── Main Pricing Component ─────────────────────────────────────────────────
 const Pricing = () => {
-  const headerRef = useRef(null);
-  const cardsRef = useRef(null);
-  const guaranteeRef = useRef(null);
-  const hintRef = useRef(null);
+  const containerRef = useRef(null);
+  const carouselRef = useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
 
+  const headerRef = useRef(null);
   const headerVisible = useScrollReveal(headerRef, 0.2);
-  const cardsVisible = useScrollReveal(cardsRef, 0.3);
-  const guaranteeVisible = useScrollReveal(guaranteeRef, 0.3);
-  const hintVisible = useScrollReveal(hintRef, 0.3);
+
+  const checkScroll = () => {
+    if (carouselRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = carouselRef.current;
+      setCanScrollLeft(scrollLeft > 10);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+    }
+  };
+
+  useEffect(() => {
+    const el = carouselRef.current;
+    if (el) {
+      el.addEventListener('scroll', checkScroll);
+      window.addEventListener('resize', checkScroll);
+      checkScroll();
+      return () => {
+        el.removeEventListener('scroll', checkScroll);
+        window.removeEventListener('resize', checkScroll);
+      };
+    }
+  }, []);
+
+  const scroll = (direction) => {
+    if (carouselRef.current) {
+      const scrollAmount = 300;
+      carouselRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   return (
-    <section className="relative bg-gray-950 py-24 px-4 overflow-hidden">
-      {/* Background effects */}
+    <section id="pricing" className="relative bg-[#050505] py-32 px-4 overflow-hidden">
+      {/* Background radial effects */}
       <div className="absolute inset-0 pointer-events-none">
-        {/* Centered subtle radial glow */}
-        <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-[0.04]"
-          style={{
-            background: 'radial-gradient(circle, #8b5cf6 0%, transparent 70%)',
-          }}
-        />
-        {/* Grid pattern */}
-        <div
-          className="absolute inset-0 opacity-[0.012]"
-          style={{
-            backgroundImage: `linear-gradient(rgba(139, 92, 246, 0.3) 1px, transparent 1px),
-                              linear-gradient(90deg, rgba(139, 92, 246, 0.3) 1px, transparent 1px)`,
-            backgroundSize: '80px 80px',
-          }}
-        />
+        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-purple-600/5 rounded-full blur-[120px]" />
+        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-indigo-600/5 rounded-full blur-[120px]" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto">
-        {/* ─── Section Header ───────────────────────────────────────────── */}
+      <div className="relative z-10 max-w-[1240px] mx-auto">
+        {/* Section Header */}
         <div ref={headerRef} className="text-center mb-16">
           <AnimatePresence mode="wait">
             {headerVisible && (
-              <>
+              <div className="flex flex-col items-center">
                 <motion.span
-                  className="inline-block text-purple-400 text-xs sm:text-sm font-semibold tracking-[0.2em] uppercase mb-4"
+                  className="text-purple-400 text-xs font-semibold tracking-[0.4em] uppercase mb-4"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  Subscription
+                </motion.span>
+                <motion.h2
+                  className="font-display text-4xl md:text-5xl font-bold text-white tracking-tight mb-6"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.5 }}
+                  transition={{ delay: 0.1 }}
                 >
-                  CHOOSE YOUR PATH
-                </motion.span>
-
-                <motion.h2
-                  className="font-display text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight mb-4"
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -30 }}
-                  transition={{ duration: 0.6, delay: 0.1 }}
-                >
-                  Simple,{' '}
-                  <span
-                    style={{
-                      background: 'linear-gradient(135deg, #c084fc, #a78bfa)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text',
-                    }}
-                  >
-                    Honest
-                  </span>{' '}
-                  Pricing
+                  Scale Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-500">Architecture</span>
                 </motion.h2>
-
                 <motion.p
-                  className="text-gray-400 text-base sm:text-lg max-w-2xl mx-auto"
-                  initial={{ opacity: 0, y: 30 }}
+                  className="text-gray-400 text-base max-w-xl mx-auto"
+                  initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -30 }}
-                  transition={{ duration: 0.6, delay: 0.2 }}
+                  transition={{ delay: 0.2 }}
                 >
-                  Start free. Upgrade when you need more power.
+                  Flexible plans designed for solo founders, high-growth teams, and scale-ready enterprises.
                 </motion.p>
-              </>
+              </div>
             )}
           </AnimatePresence>
         </div>
 
-        {/* ─── Pricing Cards ──────────────────────────────────────────────── */}
-        <div ref={cardsRef} className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-12">
-          <FreePlanCard isVisible={cardsVisible} />
-          <ProPlanCard isVisible={cardsVisible} />
+        {/* Carousel Container */}
+        <div className="relative group/carousel">
+          {/* Navigation Arrows */}
+          <button 
+            onClick={() => scroll('left')}
+            className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-30 p-3 bg-gray-900/80 border border-white/5 rounded-full transition-all hover:bg-gray-800 disabled:opacity-0 ${!canScrollLeft && 'opacity-0'}`}
+            disabled={!canScrollLeft}
+          >
+            <ChevronLeft className="w-6 h-6 text-white" />
+          </button>
+          
+          <button 
+            onClick={() => scroll('right')}
+            className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-30 p-3 bg-gray-900/80 border border-white/5 rounded-full transition-all hover:bg-gray-800 disabled:opacity-0 ${!canScrollRight && 'opacity-0'}`}
+            disabled={!canScrollRight}
+          >
+            <ChevronRight className="w-6 h-6 text-white" />
+          </button>
+
+          {/* Scrolling area */}
+          <div 
+            ref={carouselRef}
+            className="flex gap-6 overflow-x-auto no-scrollbar scroll-smooth pb-12 px-2"
+            style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}
+          >
+            {PLANS.map((plan, i) => (
+              <PlanCard key={i} plan={plan} index={i} />
+            ))}
+          </div>
         </div>
 
-        {/* ─── Money-Back Guarantee ───────────────────────────────────────── */}
-        <div ref={guaranteeRef}>
-          <AnimatePresence mode="wait">
-            {guaranteeVisible && (
-              <motion.div
-                className="text-center"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-              >
-                <p className="text-gray-500 text-sm">
-                  💳 30-day money-back guarantee · Cancel anytime · No questions asked
-                </p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* ─── Comparison Hint ────────────────────────────────────────────── */}
-        <div ref={hintRef}>
-          <AnimatePresence mode="wait">
-            {hintVisible && (
-              <motion.div
-                className="mt-16 text-center"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-              >
-                <div className="flex items-center justify-center gap-4 mb-4">
-                  <motion.div
-                    className="h-px w-12 bg-gradient-to-r from-transparent to-purple-500/30"
-                    initial={{ scaleX: 0 }}
-                    animate={{ scaleX: 1 }}
-                    exit={{ scaleX: 0 }}
-                    transition={{ duration: 0.6, delay: 0.3 }}
-                    style={{ transformOrigin: 'left' }}
-                  />
-                  <motion.div
-                    className="w-1.5 h-1.5 rounded-full bg-purple-500/50"
-                    animate={{ opacity: [0.3, 1, 0.3] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  />
-                  <motion.div
-                    className="h-px w-12 bg-gradient-to-l from-transparent to-purple-500/30"
-                    initial={{ scaleX: 0 }}
-                    animate={{ scaleX: 1 }}
-                    exit={{ scaleX: 0 }}
-                    transition={{ duration: 0.6, delay: 0.3 }}
-                    style={{ transformOrigin: 'right' }}
-                  />
-                </div>
-                <p className="text-gray-500 text-sm italic">
-                  Ready to get started? Your codebase is waiting.
-                </p>
-              </motion.div>
-            )}
-          </AnimatePresence>
+        {/* Footer info */}
+        <div className="mt-12 text-center">
+          <p className="text-gray-500 text-[11px] flex items-center justify-center gap-2 tracking-wide uppercase">
+            <span className="w-1.5 h-1.5 rounded-full bg-purple-500/40 animate-pulse" />
+            30-day money-back guarantee · Secure checkout with Stripe
+          </p>
         </div>
       </div>
+
+      <style jsx>{`
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
     </section>
   );
 };

@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, Github, Zap, Shield, FileText, GitBranch, Cpu } from 'lucide-react';
+import { Github, Zap, Shield, FileText, GitBranch, Cpu } from 'lucide-react';
 import Cube from '../../Cube';
 
 // ─── Floating Code Snippets (Digital Rain) ──────────────────────────────────
@@ -219,157 +219,6 @@ const WordReveal = ({ words, className, delayStart = 0 }) => (
   </span>
 );
 
-// ─── Terminal Agent Row ─────────────────────────────────────────────────────
-const AGENTS = [
-  { name: 'Coordinator Agent', icon: Cpu, color: 'text-purple-400', bgColor: 'bg-purple-400' },
-  { name: 'Security Agent', icon: Shield, color: 'text-red-400', bgColor: 'bg-red-400' },
-  { name: 'Writer Agent', icon: FileText, color: 'text-blue-400', bgColor: 'bg-blue-400' },
-  { name: 'Architecture Agent', icon: GitBranch, color: 'text-green-400', bgColor: 'bg-green-400' },
-];
-
-const STATUS_TIMELINE = [
-  // [time, agentIndex, status, statusType]
-  { time: 0, statuses: ['Waiting...', 'Waiting...', 'Waiting...', 'Waiting...'], types: ['gray', 'gray', 'gray', 'gray'] },
-  { time: 1000, statuses: ['Planning...', 'Waiting...', 'Waiting...', 'Waiting...'], types: ['yellow', 'gray', 'gray', 'gray'] },
-  { time: 2000, statuses: ['Complete ✓', 'Scanning...', 'Waiting...', 'Waiting...'], types: ['green', 'yellow', 'gray', 'gray'] },
-  { time: 3500, statuses: ['Complete ✓', 'Complete ✓', 'Writing...', 'Waiting...'], types: ['green', 'green', 'yellow', 'gray'] },
-  { time: 5000, statuses: ['Complete ✓', 'Complete ✓', 'Complete ✓', 'Reviewing...'], types: ['green', 'green', 'green', 'yellow'] },
-  { time: 6500, statuses: ['Complete ✓', 'Complete ✓', 'Complete ✓', 'Complete ✓'], types: ['green', 'green', 'green', 'green'] },
-];
-
-const StatusBadge = ({ status, type }) => {
-  const colors = {
-    gray: 'bg-gray-700/50 text-gray-400 border-gray-600/50',
-    yellow: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30',
-    green: 'bg-green-500/10 text-green-400 border-green-500/30',
-  };
-
-  return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${colors[type]}`}>
-      {type === 'yellow' && (
-        <motion.span
-          className="w-1.5 h-1.5 rounded-full bg-yellow-400"
-          animate={{ opacity: [1, 0.3, 1] }}
-          transition={{ duration: 1, repeat: Infinity }}
-        />
-      )}
-      {status}
-    </span>
-  );
-};
-
-const HeroTerminal = () => {
-  const [step, setStep] = useState(0);
-  const [progress, setProgress] = useState(0);
-
-  useEffect(() => {
-    const CYCLE_DURATION = 8000;
-    const times = [0, 1000, 2000, 3500, 5000, 6500];
-    let timeouts = [];
-    let progressInterval;
-
-    const runCycle = () => {
-      setStep(0);
-      setProgress(0);
-
-      times.forEach((time, index) => {
-        const timeout = setTimeout(() => {
-          setStep(index);
-        }, time);
-        timeouts.push(timeout);
-      });
-
-      // Progress bar
-      const startTime = Date.now();
-      progressInterval = setInterval(() => {
-        const elapsed = Date.now() - startTime;
-        const p = Math.min((elapsed / 6500) * 100, 100);
-        setProgress(p);
-      }, 50);
-    };
-
-    runCycle();
-    const cycleInterval = setInterval(() => {
-      timeouts.forEach(clearTimeout);
-      clearInterval(progressInterval);
-      runCycle();
-    }, CYCLE_DURATION);
-
-    return () => {
-      timeouts.forEach(clearTimeout);
-      clearInterval(progressInterval);
-      clearInterval(cycleInterval);
-    };
-  }, []);
-
-  const currentStatuses = STATUS_TIMELINE[step] || STATUS_TIMELINE[0];
-
-  return (
-    <motion.div
-      className="w-full max-w-2xl mx-auto"
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8, delay: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
-    >
-      <div className="bg-gray-900 border border-white/10 rounded-2xl overflow-hidden shadow-2xl shadow-purple-500/5">
-        {/* Window Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-gray-900/80">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-red-500" />
-            <div className="w-3 h-3 rounded-full bg-yellow-500" />
-            <div className="w-3 h-3 rounded-full bg-green-500" />
-          </div>
-          <span className="text-xs text-gray-500 font-mono">AgentLens Analysis</span>
-          <div className="w-14" />
-        </div>
-
-        {/* Agent Rows */}
-        <div className="p-4 space-y-3">
-          {AGENTS.map((agent, i) => {
-            const Icon = agent.icon;
-            return (
-              <motion.div
-                key={agent.name}
-                className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-800/40 border border-white/5"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.9 + i * 0.1 }}
-              >
-                <div className="flex items-center gap-3">
-                  <Icon className={`w-4 h-4 ${agent.color}`} />
-                  <span className="text-sm text-gray-300 font-medium">{agent.name}</span>
-                </div>
-                <StatusBadge
-                  status={currentStatuses.statuses[i]}
-                  type={currentStatuses.types[i]}
-                />
-              </motion.div>
-            );
-          })}
-
-          {/* Progress Bar */}
-          <div className="mt-4 pt-3 border-t border-white/5">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-gray-500">Analysis Progress</span>
-              <span className="text-xs text-gray-400 font-mono">{Math.round(progress)}%</span>
-            </div>
-            <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-              <motion.div
-                className="h-full rounded-full"
-                style={{
-                  width: `${progress}%`,
-                  background: 'linear-gradient(90deg, #9333ea, #8b5cf6)',
-                }}
-                transition={{ duration: 0.1 }}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
 // ─── Rotating Subheadlines ──────────────────────────────────────────────────
 const SUBHEADLINES = [
   '4 specialized AI agents collaborate in real time.',
@@ -415,9 +264,10 @@ const Hero = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (repoUrl.trim()) {
-      navigate(`/login?repo=${encodeURIComponent(repoUrl.trim())}`);
+      const target = isSignedIn ? '/dashboard' : '/login';
+      navigate(`${target}?repo=${encodeURIComponent(repoUrl.trim())}`);
     } else {
-      navigate('/login');
+      navigate(isSignedIn ? '/dashboard' : '/login');
     }
   };
 
@@ -454,11 +304,11 @@ const Hero = () => {
             transition={{ duration: 0.6, ease: 'easeOut' }}
           >
 
-            
+
             <h1 className="font-display text-5xl sm:text-6xl lg:text-[4.5rem] xl:text-[5rem] font-extrabold text-white tracking-tight leading-[1.1] mb-6 max-w-2xl text-shadow-sm">
               4 AI Agents. <br className="hidden sm:block" />
               One Codebase.{' '}
-              <span className="text-purple-400 drop-shadow-sm">
+              <span className="text-purple-500 drop-shadow-sm">
                 Zero Bugs.
               </span>
             </h1>
@@ -476,70 +326,47 @@ const Hero = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.6 }}
           >
-            {isSignedIn ? (
-              <div className="flex justify-center lg:justify-start">
-                <Link to="/dashboard">
-                  <motion.div
-                    className="relative group"
-                    whileHover={{ scale: 1.03, y: -2 }}
-                    whileTap={{ scale: 0.98 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                  >
-                    <div className="absolute -inset-1 bg-gradient-to-r from-purple-500 to-violet-500 rounded-xl blur opacity-30 group-hover:opacity-60 transition duration-500" />
-                    <Button
-                      size="lg"
-                      className="relative bg-purple-600 hover:bg-purple-500 text-white px-8 py-6 text-lg rounded-xl shadow-lg shadow-purple-500/25 border border-white/10 transition-colors z-10"
-                    >
-                    
-                      <ArrowRight className="w-5 h-5 ml-2" />
-                    </Button>
-                  </motion.div>
-                </Link>
-              </div>
-            ) : (
-              <>
-                <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4">
-                  <div className="relative flex-1 group">
-                    <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 to-violet-500 rounded-xl blur opacity-0 group-hover:opacity-30 transition duration-500" />
-                    <div className="relative flex items-center">
-                      <Github className="absolute left-4 w-5 h-5 text-gray-500" />
-                      <input
-                        type="url"
-                        value={repoUrl}
-                        onChange={(e) => setRepoUrl(e.target.value)}
-                        placeholder="Paste your GitHub repo URL..."
-                        className="w-full bg-gray-900/50 backdrop-blur-md border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all text-base relative z-10 shadow-inner"
-                      />
-                    </div>
+            <>
+              <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4">
+                <div className="relative flex-1 group">
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 to-violet-500 rounded-xl blur opacity-0 group-hover:opacity-30 transition duration-500" />
+                  <div className="relative flex items-center">
+                    <Github className="absolute left-4 w-5 h-5 text-gray-500" />
+                    <input
+                      type="url"
+                      value={repoUrl}
+                      onChange={(e) => setRepoUrl(e.target.value)}
+                      placeholder="Paste your GitHub repo URL..."
+                      className="w-full bg-gray-900/50 backdrop-blur-md border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all text-base relative z-10 shadow-inner"
+                    />
                   </div>
-                  <motion.div
-                    whileHover={{ scale: 1.02, y: -1 }}
-                    whileTap={{ scale: 0.98 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                    className="flex-shrink-0"
-                  >
-                    <Button
-                      type="submit"
-                      size="lg"
-                      className="w-full sm:w-auto bg-purple-600 hover:bg-purple-500 text-white px-8 py-4 h-[58px] rounded-xl shadow-[0_0_20px_rgba(168,85,247,0.3)] hover:shadow-[0_0_30px_rgba(168,85,247,0.5)] transition-shadow whitespace-nowrap font-medium text-base border border-purple-500/30"
-                    >
-                      Analyze My Repo
-                      <ArrowRight className="w-5 h-5 ml-2" />
-                    </Button>
-                  </motion.div>
-                </form>
-
-                {/* Micro-copy */}
-                <motion.p
-                  className="text-center lg:text-left text-gray-500 text-sm font-medium mt-5"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.4 }}
+                </div>
+                <motion.div
+                  whileHover={{ scale: 1.02, y: -1 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                  className="flex-shrink-0"
                 >
-                  No credit card required · 5 free analyses/month · Setup in 30 seconds
-                </motion.p>
-              </>
-            )}
+                  <Button
+                    type="submit"
+                    size="lg"
+                    className="w-full sm:w-auto bg-purple-600 hover:bg-purple-500 text-white px-8 py-4 h-[58px] rounded-xl shadow-[0_0_20px_rgba(168,85,247,0.3)] hover:shadow-[0_0_30px_rgba(168,85,247,0.5)] transition-shadow whitespace-nowrap font-medium text-base border border-purple-500/30"
+                  >
+                    Analyze My Repo
+                  </Button>
+                </motion.div>
+              </form>
+
+              {/* Micro-copy */}
+              <motion.p
+                className="text-center lg:text-left text-gray-500 text-sm font-medium mt-5"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+              >
+                No credit card required · 5 free analyses/month · Setup in 30 seconds
+              </motion.p>
+            </>
           </motion.div>
         </div>
 
