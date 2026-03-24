@@ -3,8 +3,8 @@
 import { callLLM, callLLMWithUserConfig } from '../llm/llmService.js';
 import {
   WRITER_SYSTEM_PROMPT,
+  buildDocumentationPrompt
 } from '../prompts/technicalWriterPrompt.js';
-import { buildDocumentationPrompt } from '../prompts/documentationPrompt.js';
 import {
   PRO_DOCS_SYSTEM_PROMPT,
   buildProDocumentationPrompt,
@@ -209,11 +209,8 @@ export async function runTechnicalWriter(
     console.log('[TechnicalWriter] Generating free-tier documentation...');
     memory.setAgentStatus(agentName, 'acting', 'Generating documentation content...');
 
-    // Build code context
-    const codeContext = buildCodeContext(files, repoSummary, bugs);
-
     // Build free tier prompt
-    const prompt = buildDocumentationPrompt(codeContext, fileTreeData);
+    const prompt = buildDocumentationPrompt(files, bugs, plan);
 
     const messages = [
       { role: 'system', content: WRITER_SYSTEM_PROMPT },

@@ -62,13 +62,13 @@ function DiffViewer({
   }
 
   return (
-    <div className="rounded-xl overflow-hidden border border-white/10">
+    <div className="rounded-xl overflow-hidden border border-border/40 shadow-xl bg-background/60 backdrop-blur-xl">
       {/* Header */}
-      <div className="flex items-center justify-between bg-gray-900 px-4 py-3 border-b border-white/10">
+      <div className="flex items-center justify-between bg-muted/20 px-4 py-3 border-b border-border/40">
         <div className="flex items-center gap-3">
           <GitBranch className="w-4 h-4 text-purple-400" />
-          <span className="text-white font-mono text-sm">{filename}</span>
-          <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+          <span className="text-foreground/90 font-mono text-sm tracking-tight">{filename}</span>
+          <Badge variant="outline" className="bg-violet-500/10 text-violet-500 border-violet-500/30">
             AI Fix Preview
           </Badge>
         </div>
@@ -77,17 +77,17 @@ function DiffViewer({
             variant="outline"
             size="sm"
             onClick={onReject}
-            className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+            className="border-red-500/30 text-red-500 hover:bg-red-500/10 hover:text-red-400 h-8"
           >
-            <X className="w-4 h-4 mr-1" />
+            <X className="w-4 h-4 mr-1.5" />
             Reject
           </Button>
           <Button
             size="sm"
             onClick={onAccept}
-            className="bg-green-600 hover:bg-green-700 text-white"
+            className="bg-green-600 hover:bg-green-700 text-white shadow-md h-8"
           >
-            <Check className="w-4 h-4 mr-1" />
+            <Check className="w-4 h-4 mr-1.5" />
             Accept Fix
           </Button>
         </div>
@@ -118,20 +118,20 @@ function DiffViewer({
             padding: { top: 12, bottom: 12 }
           }}
           loading={
-            <div className="flex items-center justify-center h-full bg-[#0a0a0f]">
-              <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+            <div className="flex items-center justify-center h-full bg-background/50 backdrop-blur-sm">
+              <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
             </div>
           }
         />
       </div>
 
       {/* Stats Bar */}
-      <div className="bg-gray-900 border-t border-white/10 px-4 py-2 text-xs flex gap-4">
-        <span className="text-gray-400">Changes:</span>
-        <span className="text-green-400">
+      <div className="bg-muted/10 border-t border-border/40 px-4 py-2.5 text-xs flex gap-4 font-medium tracking-wide">
+        <span className="text-muted-foreground">Changes:</span>
+        <span className="text-green-500 bg-green-500/10 px-2 py-0.5 rounded">
           + {diffStats.added} line{diffStats.added !== 1 ? 's' : ''} added
         </span>
-        <span className="text-red-400">
+        <span className="text-red-500 bg-red-500/10 px-2 py-0.5 rounded">
           - {diffStats.removed} line{diffStats.removed !== 1 ? 's' : ''} removed
         </span>
       </div>

@@ -12,15 +12,12 @@ import { Zap, Play, Square, RotateCcw, Lock, Check, X, Circle, AlertTriangle, Fi
 function FixAgent({ onUpgradeClick, onFixSingle, onFixAll, onCancel }) {
   const [selectedBugIds, setSelectedBugIds] = useState(new Set())
 
-  // Auth store
   const userProfile = useAuthStore((state) => state.userProfile)
   const isPro = userProfile?.plan === 'pro'
 
-  // Agent store - get bugs
   const securitySummary = useAgentStore((state) => state.securitySummary)
   const bugs = securitySummary?.issues || securitySummary?.bugs || []
 
-  // Fix store
   const {
     isFixing,
     currentFixBugId,
@@ -29,71 +26,40 @@ function FixAgent({ onUpgradeClick, onFixSingle, onFixAll, onCancel }) {
     failedBugIds,
     startFixing,
     stopFixing,
-    markBugFixed,
-    markBugFailed
   } = useFixStore()
 
   const handleFixAll = async () => {
-    if (!isPro) {
-      onUpgradeClick?.()
-      return
-    }
-
+    if (!isPro) { onUpgradeClick?.(); return }
     if (bugs.length === 0) return
-
     startFixing(bugs.length)
-
-    // Call the wired-in fix handler from Dashboard
-    if (onFixAll) {
-      onFixAll(bugs)
-    }
+    if (onFixAll) onFixAll(bugs)
   }
 
   const handleFixSelected = async () => {
-    if (!isPro) {
-      onUpgradeClick?.()
-      return
-    }
-
+    if (!isPro) { onUpgradeClick?.(); return }
     if (selectedBugIds.size === 0) return
-
     const selectedBugs = bugs.filter(b => selectedBugIds.has(b.id || `bug-${bugs.indexOf(b)}`))
     startFixing(selectedBugIds.size)
-
-    if (onFixAll) {
-      onFixAll(selectedBugs)
-    }
+    if (onFixAll) onFixAll(selectedBugs)
   }
 
   const handleFixSingle = async (bugId) => {
-    if (!isPro) {
-      onUpgradeClick?.()
-      return
-    }
-
+    if (!isPro) { onUpgradeClick?.(); return }
     const bug = bugs.find(b => (b.id || `bug-${bugs.indexOf(b)}`) === bugId) || { id: bugId }
     startFixing(1)
-
-    if (onFixSingle) {
-      onFixSingle(bug)
-    }
+    if (onFixSingle) onFixSingle(bug)
   }
 
   const handleStop = () => {
     stopFixing()
-    if (onCancel) {
-      onCancel()
-    }
+    if (onCancel) onCancel()
   }
 
   const toggleBugSelection = (bugId) => {
     setSelectedBugIds((prev) => {
       const newSet = new Set(prev)
-      if (newSet.has(bugId)) {
-        newSet.delete(bugId)
-      } else {
-        newSet.add(bugId)
-      }
+      if (newSet.has(bugId)) newSet.delete(bugId)
+      else newSet.add(bugId)
       return newSet
     })
   }
@@ -109,49 +75,51 @@ function FixAgent({ onUpgradeClick, onFixSingle, onFixAll, onCancel }) {
     switch (severity?.toLowerCase()) {
       case 'critical':
       case 'high':
-        return 'bg-red-500/20 text-red-400 border-red-500/30'
+        return 'bg-red-500/15 text-red-500 border-red-500/30'
       case 'medium':
-        return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+        return 'bg-amber-500/15 text-amber-500 border-amber-500/30'
       case 'low':
-        return 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+        return 'bg-blue-500/15 text-blue-500 border-blue-500/30'
       default:
-        return 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+        return 'bg-muted text-muted-foreground border-border/50'
     }
   }
 
   const getStatusIcon = (status) => {
     switch (status) {
       case 'fixed':
-        return <Check className="w-4 h-4 text-green-400" />
+        return <Check className="w-4 h-4 text-emerald-500" />
       case 'failed':
-        return <X className="w-4 h-4 text-red-400" />
+        return <X className="w-4 h-4 text-red-500" />
       case 'fixing':
         return (
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
           >
-            <Zap className="w-4 h-4 text-purple-400" />
+            <Zap className="w-4 h-4 text-violet-500" />
           </motion.div>
         )
       default:
-        return <Circle className="w-4 h-4 text-gray-500" />
+        return <Circle className="w-4 h-4 text-muted-foreground/50" />
     }
   }
 
   return (
-    <Card className="bg-gray-900 border-white/10">
-      <CardHeader className="pb-4">
+    <Card className="border-border/40 bg-background/60 backdrop-blur-xl shadow-lg overflow-hidden">
+      <CardHeader className="pb-4 border-b border-border/30 bg-muted/10">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-white flex items-center gap-2">
-            <Zap className="w-5 h-5 text-purple-400" />
+          <CardTitle className="text-foreground flex items-center gap-2 text-base font-bold">
+            <div className="p-1.5 rounded-lg bg-violet-500/10 border border-violet-500/20">
+              <Zap className="w-4 h-4 text-violet-500" />
+            </div>
             Fix Agent
           </CardTitle>
-          <Badge className="bg-purple-600/20 text-purple-400 border-purple-500/30">
+          <Badge variant="outline" className="bg-violet-500/10 text-violet-500 border-violet-500/30 text-[10px] font-bold uppercase tracking-wider">
             Pro Feature
           </Badge>
         </div>
-        <p className="text-gray-400 text-sm mt-1">
+        <p className="text-muted-foreground text-sm mt-2">
           {bugs.length > 0
             ? `${bugs.length} bug${bugs.length !== 1 ? 's' : ''} detected. Auto-fix all?`
             : 'Analyze code to detect fixable bugs.'
@@ -159,16 +127,16 @@ function FixAgent({ onUpgradeClick, onFixSingle, onFixAll, onCancel }) {
         </p>
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 p-5">
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-2">
           <Button
             onClick={handleFixAll}
             disabled={isFixing || bugs.length === 0}
-            className={isPro
-              ? 'bg-purple-600 hover:bg-purple-700'
-              : 'bg-purple-600/50'
-            }
+            className={`h-9 font-semibold shadow-md transition-all ${isPro
+              ? 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white'
+              : 'bg-violet-600/50 text-white/70'
+            }`}
           >
             {!isPro && <Lock className="w-4 h-4 mr-2" />}
             <Play className="w-4 h-4 mr-2" />
@@ -179,7 +147,7 @@ function FixAgent({ onUpgradeClick, onFixSingle, onFixAll, onCancel }) {
             variant="outline"
             onClick={handleFixSelected}
             disabled={isFixing || selectedBugIds.size === 0}
-            className="border-white/20 text-gray-300 hover:bg-white/10"
+            className="border-border/50 text-foreground hover:bg-muted/50 h-9"
           >
             Fix Selected ({selectedBugIds.size})
           </Button>
@@ -188,7 +156,7 @@ function FixAgent({ onUpgradeClick, onFixSingle, onFixAll, onCancel }) {
             <Button
               variant="outline"
               onClick={handleStop}
-              className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+              className="border-red-500/30 text-red-500 hover:bg-red-500/10 h-9"
             >
               <Square className="w-4 h-4 mr-2" />
               Stop
@@ -203,20 +171,20 @@ function FixAgent({ onUpgradeClick, onFixSingle, onFixAll, onCancel }) {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="space-y-2"
+              className="space-y-2 py-1"
             >
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-400">
+                <span className="text-muted-foreground font-medium">
                   Fixing bug {fixProgress.current} of {fixProgress.total}
                 </span>
-                <span className="text-purple-400">{fixProgress.percentage}%</span>
+                <span className="text-violet-500 font-bold">{fixProgress.percentage}%</span>
               </div>
               <Progress
                 value={fixProgress.percentage}
-                className="h-2 bg-gray-800 [&>div]:bg-purple-500"
+                className="h-2 bg-muted/50 [&>div]:bg-gradient-to-r [&>div]:from-violet-500 [&>div]:to-indigo-500"
               />
               {currentFixBugId && (
-                <p className="text-gray-500 text-xs">
+                <p className="text-muted-foreground/70 text-xs font-mono">
                   Currently fixing: {currentFixBugId}
                 </p>
               )}
@@ -227,13 +195,15 @@ function FixAgent({ onUpgradeClick, onFixSingle, onFixAll, onCancel }) {
         {/* Bug List */}
         <div className="relative">
           {bugs.length === 0 ? (
-            <div className="text-center py-8">
-              <Check className="w-12 h-12 text-green-400 mx-auto mb-3" />
-              <p className="text-white font-medium">No bugs to fix!</p>
-              <p className="text-gray-500 text-sm">Your code looks clean.</p>
+            <div className="text-center py-10">
+              <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-4">
+                <Check className="w-8 h-8 text-emerald-500" />
+              </div>
+              <p className="text-foreground font-semibold">No bugs to fix!</p>
+              <p className="text-muted-foreground text-sm mt-1">Your code looks clean.</p>
             </div>
           ) : (
-            <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+            <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">
               {bugs.map((bug, index) => {
                 const bugId = bug.id || `bug-${index}`
                 const status = getBugStatus(bugId)
@@ -244,29 +214,26 @@ function FixAgent({ onUpgradeClick, onFixSingle, onFixAll, onCancel }) {
                     key={bugId}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
+                    transition={{ delay: index * 0.04 }}
                     className={`
-                      flex items-center gap-3 p-3 rounded-lg border transition-colors cursor-pointer
+                      flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer
                       ${isSelected
-                        ? 'bg-purple-500/10 border-purple-500/30'
-                        : 'bg-gray-800/50 border-white/5 hover:border-white/10'
+                        ? 'bg-violet-500/10 border-violet-500/30 ring-1 ring-violet-500/20'
+                        : 'bg-muted/20 border-border/30 hover:border-border/60 hover:bg-muted/40'
                       }
-                      ${status === 'fixed' ? 'opacity-60' : ''}
+                      ${status === 'fixed' ? 'opacity-50' : ''}
                     `}
                     onClick={() => toggleBugSelection(bugId)}
                   >
-                    {/* Status Icon */}
                     <div className="flex-shrink-0">
                       {getStatusIcon(status)}
                     </div>
 
-                    {/* Severity Badge */}
-                    <Badge className={`flex-shrink-0 text-xs ${getSeverityColor(bug.severity)}`}>
+                    <Badge variant="outline" className={`flex-shrink-0 text-[10px] font-bold uppercase ${getSeverityColor(bug.severity)}`}>
                       {bug.severity || 'Medium'}
                     </Badge>
 
-                    {/* File & Line */}
-                    <div className="flex items-center gap-1 text-gray-500 text-xs flex-shrink-0">
+                    <div className="flex items-center gap-1 text-muted-foreground text-xs flex-shrink-0">
                       <FileCode className="w-3 h-3" />
                       <span className="font-mono">
                         {bug.file || bug.filename || 'unknown'}
@@ -274,12 +241,10 @@ function FixAgent({ onUpgradeClick, onFixSingle, onFixAll, onCancel }) {
                       </span>
                     </div>
 
-                    {/* Description */}
-                    <p className="text-gray-300 text-sm truncate flex-1">
+                    <p className="text-foreground/80 text-sm truncate flex-1">
                       {bug.message || bug.description || bug.title || 'Unknown issue'}
                     </p>
 
-                    {/* Fix Button */}
                     <Button
                       size="sm"
                       variant="ghost"
@@ -288,27 +253,18 @@ function FixAgent({ onUpgradeClick, onFixSingle, onFixAll, onCancel }) {
                         handleFixSingle(bugId)
                       }}
                       disabled={isFixing || status === 'fixed'}
-                      className={`flex-shrink-0 ${
+                      className={`flex-shrink-0 h-7 text-xs ${
                         status === 'fixed'
-                          ? 'text-green-400'
-                          : 'text-purple-400 hover:text-purple-300 hover:bg-purple-500/10'
+                          ? 'text-emerald-500'
+                          : 'text-violet-500 hover:text-violet-400 hover:bg-violet-500/10'
                       }`}
                     >
                       {status === 'fixed' ? (
-                        <>
-                          <Check className="w-4 h-4 mr-1" />
-                          Fixed
-                        </>
+                        <><Check className="w-3.5 h-3.5 mr-1" />Fixed</>
                       ) : status === 'failed' ? (
-                        <>
-                          <RotateCcw className="w-4 h-4 mr-1" />
-                          Retry
-                        </>
+                        <><RotateCcw className="w-3.5 h-3.5 mr-1" />Retry</>
                       ) : (
-                        <>
-                          <Play className="w-4 h-4 mr-1" />
-                          Fix
-                        </>
+                        <><Play className="w-3.5 h-3.5 mr-1" />Fix</>
                       )}
                     </Button>
                   </motion.div>
@@ -322,20 +278,20 @@ function FixAgent({ onUpgradeClick, onFixSingle, onFixAll, onCancel }) {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="absolute inset-0 bg-gray-950/80 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center"
+              className="absolute inset-0 bg-background/80 backdrop-blur-md rounded-xl flex flex-col items-center justify-center"
             >
-              <div className="w-16 h-16 rounded-full bg-purple-500/20 flex items-center justify-center mb-4">
-                <Lock className="w-8 h-8 text-purple-400" />
+              <div className="w-16 h-16 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mb-4">
+                <Lock className="w-8 h-8 text-violet-500" />
               </div>
-              <h3 className="text-white font-semibold text-lg mb-2">
+              <h3 className="text-foreground font-bold text-lg mb-2">
                 Auto-Fix requires Pro
               </h3>
-              <p className="text-gray-400 text-sm text-center max-w-xs mb-4">
+              <p className="text-muted-foreground text-sm text-center max-w-xs mb-5">
                 Upgrade to Pro to automatically fix all detected bugs with AI
               </p>
               <Button
                 onClick={onUpgradeClick}
-                className="bg-purple-600 hover:bg-purple-700"
+                className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:opacity-90 text-white shadow-lg h-10 px-6 font-semibold"
               >
                 <Zap className="w-4 h-4 mr-2" />
                 Upgrade to Pro
@@ -346,17 +302,17 @@ function FixAgent({ onUpgradeClick, onFixSingle, onFixAll, onCancel }) {
 
         {/* Stats */}
         {bugs.length > 0 && (
-          <div className="flex items-center gap-4 pt-2 border-t border-white/10 text-xs text-gray-500">
-            <span className="flex items-center gap-1">
-              <Check className="w-3 h-3 text-green-400" />
+          <div className="flex items-center gap-5 pt-3 border-t border-border/30 text-xs font-medium">
+            <span className="flex items-center gap-1.5 text-emerald-500">
+              <Check className="w-3.5 h-3.5" />
               {fixedBugIds.size} fixed
             </span>
-            <span className="flex items-center gap-1">
-              <X className="w-3 h-3 text-red-400" />
+            <span className="flex items-center gap-1.5 text-red-500">
+              <X className="w-3.5 h-3.5" />
               {failedBugIds.size} failed
             </span>
-            <span className="flex items-center gap-1">
-              <Circle className="w-3 h-3 text-gray-400" />
+            <span className="flex items-center gap-1.5 text-muted-foreground">
+              <Circle className="w-3.5 h-3.5" />
               {bugs.length - fixedBugIds.size - failedBugIds.size} pending
             </span>
           </div>

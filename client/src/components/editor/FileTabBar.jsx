@@ -31,28 +31,28 @@ function FileTabBar({ tabs = [], onTabClick, onTabClose, onTabSave }) {
 
   if (!tabs || tabs.length === 0) {
     return (
-      <div className="flex items-center bg-gray-900 border-b border-white/10 h-10">
-        <span className="text-gray-600 text-sm px-4 py-2">No files open</span>
+      <div className="flex items-center bg-muted/20 border-b border-border/40 h-10">
+        <span className="text-muted-foreground text-sm px-4 py-2 font-medium">No files open</span>
       </div>
     )
   }
 
   return (
-    <div className="flex items-center bg-gray-900 border-b border-white/10 overflow-x-auto scrollbar-hide">
+    <div className="flex items-center bg-muted/20 border-b border-border/40 overflow-x-auto scrollbar-hide pt-1 px-1 gap-1">
       <AnimatePresence mode="popLayout">
         {tabs.map((tab) => (
           <motion.div
             key={tab.path}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -10 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
             transition={{ duration: 0.15 }}
             className={`
-              group flex items-center gap-2 px-4 py-2 border-r border-white/10 
-              cursor-pointer whitespace-nowrap text-sm transition-colors min-w-0
+              group flex items-center gap-2 px-3 py-1.5 rounded-t-lg border-t border-x border-transparent
+              cursor-pointer whitespace-nowrap text-xs font-medium transition-all min-w-0 mb-[-1px]
               ${tab.isActive
-                ? 'bg-gray-950 text-white border-b-2 border-purple-500'
-                : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                ? 'bg-background/80 backdrop-blur-md text-foreground border-border/40 shadow-[0_-4px_12px_rgba(0,0,0,0.1)]'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
               }
             `}
             onClick={() => onTabClick?.(tab.path)}
@@ -71,12 +71,12 @@ function FileTabBar({ tabs = [], onTabClick, onTabClose, onTabSave }) {
             >
               {tab.hasChanges ? (
                 <Circle
-                  className="w-2 h-2 fill-amber-400 text-amber-400 hover:fill-amber-300 hover:text-amber-300 transition-colors"
+                  className="w-2 h-2 fill-amber-500 text-amber-500 hover:fill-amber-400 hover:text-amber-400 transition-colors"
                   title="Unsaved changes - Click to save"
                 />
               ) : (
                 <X
-                  className="w-4 h-4 text-gray-600 opacity-0 group-hover:opacity-100 hover:text-white transition-all"
+                  className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-foreground hover:bg-muted rounded-full p-0.5 transition-all"
                   title="Close tab"
                 />
               )}

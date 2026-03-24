@@ -39,7 +39,7 @@ router.post('/', optionalAuth, syncUser, attachLLMConfig, async (req, res) => {
 
     // Step 4 — Send repo_ready event
     sendSSEEvent(res, 'repo_ready', {
-      summary: repoSummary,
+      summary: { ...repoSummary, files },
       filesCount: files.length
     })
 

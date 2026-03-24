@@ -10,10 +10,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 const DocumentationTab = () => {
   const { writerResult, repoInfo, securitySummary } = useAgentStore();
 
-  const documentation = typeof writerResult === 'string'
-    ? writerResult
-    : writerResult?.content || writerResult?.documentation || writerResult?.markdown || '';
-  const documentationMeta = writerResult?.meta || null;
+  let parsedWriterResult = writerResult;
+  try {
+    if (typeof writerResult === 'string' && (writerResult.trim().startsWith('{') || writerResult.trim().startsWith('['))) {
+      parsedWriterResult = JSON.parse(writerResult);
+    }
+  } catch (e) {
+    // Keep as string if parsing fails
+  }
+
+  const documentation = typeof parsedWriterResult === 'string'
+    ? parsedWriterResult
+    : parsedWriterResult?.content || parsedWriterResult?.documentation || parsedWriterResult?.markdown || '';
+  const documentationMeta = parsedWriterResult?.meta || null;
   const repoSummary = repoInfo;
   const bugs = securitySummary?.bugs || [];
   const [viewMode, setViewMode] = useState("rendered");

@@ -30,8 +30,11 @@ function Auth({ mode }) {
   return (
     <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-4">
       <Link to="/" className="hover:opacity-80 transition-opacity mb-8">
-        <h1 className="text-3xl font-bold text-white flex items-center gap-2">
-          Agent<span className="bg-gradient-to-r from-purple-500 to-purple-400 bg-clip-text text-transparent">Lens</span>
+        <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+          <img src="/logo.png" alt="AgentLens Logo" className="h-10 w-10 object-contain bg-transparent" />
+          <span>
+            Agent<span className="bg-gradient-to-r from-purple-500 to-purple-400 bg-clip-text text-transparent">Lens</span>
+          </span>
         </h1>
       </Link>
 

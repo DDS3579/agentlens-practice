@@ -1,4 +1,3 @@
-// client/src/components/ui/AppSidebar.jsx
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -7,6 +6,11 @@ import {
   CreditCard,
   Code2,
   Sparkles,
+  Zap,
+  Bug,
+  BarChart3,
+  TerminalSquare,
+  ArrowRight
 } from "lucide-react";
 
 import {
@@ -25,61 +29,37 @@ import {
 } from "@/components/ui/sidebar";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import UserProfileDropdown from "./UserProfileDropdown";
-import { useCallback } from "react";
 import useAuthStore from "../../store/authStore";
 import useAgentStore from "../../store/agentStore";
-import useFixStore from "../../store/fixStore";
 
-// ── Step 7: Custom Agent Panel ──
-import CustomAgentPanel from "../agents/CustomAgentPanel";
-
-// ── Step 9: New Pro sidebar panels ──
-import AgentStatusPanel from "../agents/AgentStatusPanel";
-import FixQueuePanel from "../agents/FixQueuePanel";
-import TokenUsageMeter from "../billing/TokenUsageMeter";
-import GitHubPRButton from "../github/GitHubPRButton";
-
-// Navigation items configuration
 const navigationItems = [
-  {
-    title: "Dashboard",
-    path: "/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    title: "History",
-    path: "/history",
-    icon: Clock,
-  },
-  {
-    title: "Settings",
-    path: "/settings",
-    icon: Settings,
-  },
-  {
-    title: "Billing",
-    path: "/billing",
-    icon: CreditCard,
-  },
+  { title: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+  { title: "Code Editor", path: "/editor", icon: TerminalSquare },
+  { title: "Results", path: "/results", icon: BarChart3 },
+  { title: "Fix Agent", path: "/fix", icon: Zap },
+  { title: "History", path: "/history", icon: Clock },
+  { title: "Settings", path: "/settings", icon: Settings },
+  { title: "Billing", path: "/billing", icon: CreditCard },
 ];
 
-// Logo component with inline icon
 function AgentLensLogo() {
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
 
   return (
-    <div className="flex items-center gap-2 px-2 py-1">
-      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 shadow-lg shadow-violet-500/20">
-        <Code2 className="h-4 w-4 text-white" />
+    <div className="flex items-center gap-3 px-2 py-1 group cursor-pointer transition-all duration-300">
+      <div className="flex h-9 w-9 items-center justify-center">
+        <img src="/logo.png" alt="AgentLens Logo" className="h-7 w-7 object-contain bg-transparent" />
       </div>
       {!isCollapsed && (
-        <div className="flex flex-col">
-          <span className="text-lg font-semibold tracking-tight text-sidebar-foreground">
-            AgentLens
+        <div className="flex flex-col animate-in fade-in slide-in-from-left-2 duration-300">
+          <span className="text-lg font-bold tracking-tight text-foreground">
+            Agent<span className="text-violet-500">Lens</span>
           </span>
-          <span className="text-[10px] font-medium uppercase tracking-widest text-sidebar-foreground/50">
+          <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
             AI Code Analysis
           </span>
         </div>
@@ -88,12 +68,10 @@ function AgentLensLogo() {
   );
 }
 
-// Usage indicator for free tier
 function UsageIndicator() {
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
 
-  // TODO: Connect to your actual billing store
   const usedAnalyses = 3;
   const maxAnalyses = 5;
   const remainingAnalyses = maxAnalyses - usedAnalyses;
@@ -103,33 +81,14 @@ function UsageIndicator() {
     return (
       <div className="flex items-center justify-center px-2 py-3">
         <div
-          className="relative flex h-8 w-8 items-center justify-center rounded-full"
+          className="relative flex h-8 w-8 items-center justify-center rounded-full bg-background border border-border/50 shadow-sm"
           title={`${remainingAnalyses} analyses remaining`}
         >
           <svg className="h-8 w-8 -rotate-90 transform">
-            <circle
-              cx="16"
-              cy="16"
-              r="14"
-              stroke="currentColor"
-              strokeWidth="3"
-              fill="none"
-              className="text-sidebar-accent"
-            />
-            <circle
-              cx="16"
-              cy="16"
-              r="14"
-              stroke="currentColor"
-              strokeWidth="3"
-              fill="none"
-              strokeDasharray={`${usagePercentage * 0.88} 88`}
-              className="text-violet-500"
-            />
+            <circle cx="16" cy="16" r="14" stroke="currentColor" strokeWidth="3" fill="none" className="text-muted/30" />
+            <circle cx="16" cy="16" r="14" stroke="currentColor" strokeWidth="3" fill="none" strokeDasharray={`${usagePercentage * 0.88} 88`} className="text-violet-500 transition-all duration-500" />
           </svg>
-          <span className="absolute text-xs font-bold text-sidebar-foreground">
-            {remainingAnalyses}
-          </span>
+          <span className="absolute text-[10px] font-bold text-foreground">{remainingAnalyses}</span>
         </div>
       </div>
     );
@@ -137,31 +96,25 @@ function UsageIndicator() {
 
   return (
     <div className="px-3 py-3">
-      <div className="rounded-lg border border-sidebar-border bg-sidebar-accent/30 p-3">
+      <div className="rounded-xl border border-border/50 bg-background/50 backdrop-blur-md p-3 shadow-sm transition-all hover:bg-background/80 hover:border-violet-500/30">
         <div className="mb-2 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
-            <Sparkles className="h-3.5 w-3.5 text-violet-400" />
-            <span className="text-xs font-medium text-sidebar-foreground">
-              Free Tier
-            </span>
+            <Sparkles className="h-3.5 w-3.5 text-violet-500" />
+            <span className="text-xs font-bold text-foreground">Free Tier</span>
           </div>
-          <span className="text-xs text-sidebar-foreground/70">
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
             {remainingAnalyses} left
           </span>
         </div>
-        <Progress
-          value={usagePercentage}
-          className="h-1.5 bg-sidebar-accent"
-        />
-        <p className="mt-2 text-[10px] text-sidebar-foreground/50">
-          {usedAnalyses} of {maxAnalyses} analyses used this month
+        <Progress value={usagePercentage} className="h-1.5 bg-muted/50 [&>div]:bg-violet-500" />
+        <p className="mt-1.5 text-[10px] text-muted-foreground font-medium">
+          {usedAnalyses} of {maxAnalyses} analyses used
         </p>
       </div>
     </div>
   );
 }
 
-// Navigation menu component
 function NavigationMenu() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -169,14 +122,12 @@ function NavigationMenu() {
   const isCollapsed = state === "collapsed";
 
   const isActive = (path) => {
-    if (path === "/dashboard") {
-      return location.pathname === "/dashboard";
-    }
+    if (path === "/dashboard") return location.pathname === "/dashboard";
     return location.pathname.startsWith(path);
   };
 
   return (
-    <SidebarMenu>
+    <SidebarMenu className="gap-1">
       {navigationItems.map((item) => {
         const active = isActive(item.path);
         const Icon = item.icon;
@@ -188,26 +139,19 @@ function NavigationMenu() {
               isActive={active}
               tooltip={isCollapsed ? item.title : undefined}
               className={`
-                group relative transition-all duration-200
-                ${
-                  active
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                group relative transition-all duration-200 rounded-lg h-9
+                ${active
+                  ? "bg-violet-500/10 text-violet-500 font-semibold"
+                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                 }
               `}
             >
               {active && (
-                <div className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-violet-500" />
+                <div className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-violet-500" />
               )}
-
-              <Icon
-                className={`h-4 w-4 shrink-0 transition-colors ${
-                  active ? "text-violet-400" : "group-hover:text-violet-400"
-                }`}
-              />
-
+              <Icon className={`h-4 w-4 shrink-0 transition-colors ${active ? "text-violet-500" : ""}`} />
               {!isCollapsed && (
-                <span className="truncate">{item.title}</span>
+                <span className="text-[13px] ml-1">{item.title}</span>
               )}
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -217,83 +161,70 @@ function NavigationMenu() {
   );
 }
 
-export default function AppSidebar() {
+function FixAgentShortcut() {
   const navigate = useNavigate();
+  const { state } = useSidebar();
+  const isCollapsed = state === "collapsed";
+  const securitySummary = useAgentStore((s) => s.securitySummary);
+  const pipelinePhase = useAgentStore((s) => s.currentPhase);
 
-  // Get Pro status
-  const isPro = useAuthStore((state) => state.isPro);
+  const bugCount = securitySummary?.totalIssues || securitySummary?.bugs?.length || securitySummary?.issues?.length || 0;
+  const hasResults = pipelinePhase === "complete";
 
-  // Get session info
-  const sessionId = useAgentStore((state) => state.sessionId);
-  const isAnalyzing = useAgentStore((state) => state.isAnalyzing);
-
-  // Fix store actions
-  const setCustomPrompt = useFixStore((state) => state.setCustomPrompt);
-
-  // Handle custom prompt submission
-  const handleCustomPromptSubmit = useCallback(
-    async (promptText) => {
-      setCustomPrompt(promptText);
-
-      if (sessionId && !isAnalyzing) {
-        try {
-          const getToken = window.__agentlens_getToken;
-          if (!getToken) {
-            console.warn("[AppSidebar] No getToken function available");
-            return;
-          }
-
-          const token = await getToken();
-
-          const response = await fetch("/api/fix/custom", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              sessionId,
-              customPrompt: promptText,
-            }),
-          });
-
-          if (!response.ok) {
-            console.error(
-              "[AppSidebar] Custom agent request failed:",
-              response.status
-            );
-          }
-        } catch (error) {
-          console.error(
-            "[AppSidebar] Error triggering custom agent:",
-            error
-          );
-        }
-      } else {
-        console.log(
-          "[AppSidebar] Custom prompt stored, will run with next analysis"
-        );
-      }
-    },
-    [sessionId, isAnalyzing, setCustomPrompt]
-  );
+  if (isCollapsed) return null;
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-sidebar-border">
-      {/* ================================================
-          HEADER — Logo
-          ================================================ */}
-      <SidebarHeader className="border-b border-sidebar-border/50 px-2 py-4">
+    <div className="px-3 py-3">
+      <div className="rounded-xl border border-violet-500/20 bg-gradient-to-br from-violet-500/5 to-indigo-500/5 p-3 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <Zap className="h-3.5 w-3.5 text-violet-500" />
+            <span className="text-xs font-bold text-foreground">Fix Agent</span>
+          </div>
+          {hasResults && bugCount > 0 && (
+            <Badge className="bg-red-500/15 text-red-400 border-red-500/30 text-[10px] font-bold px-1.5 py-0">
+              <Bug className="w-3 h-3 mr-0.5" /> {bugCount}
+            </Badge>
+          )}
+        </div>
+        <p className="text-[10px] text-muted-foreground leading-tight">
+          {hasResults
+            ? bugCount > 0
+              ? `${bugCount} bug${bugCount !== 1 ? 's' : ''} detected — auto-fix with AI`
+              : 'No bugs detected in your code'
+            : 'Run an analysis to detect fixable bugs'
+          }
+        </p>
+        <Button
+          size="sm"
+          onClick={() => navigate('/fix')}
+          className="w-full h-7 text-[11px] font-semibold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-sm"
+        >
+          <Zap className="w-3 h-3 mr-1" />
+          Go to Fix Agent
+          <ArrowRight className="w-3 h-3 ml-auto" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+export default function AppSidebar() {
+  const isPro = useAuthStore((state) => state.isPro);
+  const { state: sidebarState } = useSidebar();
+  const isCollapsed = sidebarState === "collapsed";
+
+  return (
+    <Sidebar collapsible="icon" className="border-r border-border/30 bg-background/90 backdrop-blur-xl z-50">
+      
+      <SidebarHeader className="border-b border-border/20 px-3 py-3.5">
         <AgentLensLogo />
       </SidebarHeader>
 
-      {/* ================================================
-          MAIN CONTENT
-          ================================================ */}
-      <SidebarContent className="flex flex-col px-0 py-0">
-        {/* Navigation Group */}
-        <SidebarGroup className="px-2 py-4">
-          <SidebarGroupLabel className="px-2 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/40">
+      <SidebarContent className="flex flex-col">
+        {/* Navigation */}
+        <SidebarGroup className="px-3 py-4">
+          <SidebarGroupLabel className="px-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 mb-1.5">
             Navigation
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -301,70 +232,19 @@ export default function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <Separator className="bg-sidebar-border/50" />
+        <Separator className="bg-border/20 mx-4 w-auto" />
 
-        {/* ================================================
-            PRO TOOLS — Scrollable section
-            All Pro-only panels in a scrollable container
-            so they don't push the footer off-screen
-            ================================================ */}
-        {isPro ? (
-          <div
-            className="overflow-y-auto flex-1 space-y-2 px-2 py-2"
-            style={{ maxHeight: "calc(100vh - 180px)" }}
-          >
-            {/* ── Step 7: Custom Agent Panel ── */}
-            <SidebarGroup className="p-0">
-              <SidebarGroupLabel className="px-2 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/40">
-                Pro Tools
-              </SidebarGroupLabel>
-              <SidebarGroupContent className="px-0">
-                <CustomAgentPanel
-                  onSubmitPrompt={handleCustomPromptSubmit}
-                  isPro={isPro}
-                />
-              </SidebarGroupContent>
-            </SidebarGroup>
+        {/* Fix Agent Shortcut */}
+        <FixAgentShortcut />
 
-            <Separator className="bg-sidebar-border/30" />
-
-            {/* ── Step 9: Agent Status Panel ── */}
-            <AgentStatusPanel />
-
-            <Separator className="bg-sidebar-border/30" />
-
-            {/* ── Step 9: Fix Queue Panel ── */}
-            <FixQueuePanel />
-
-            <Separator className="bg-sidebar-border/30" />
-
-            {/* ── Step 9: Token Usage Meter ── */}
-            <TokenUsageMeter />
-
-            <Separator className="bg-sidebar-border/30" />
-
-            {/* ── Step 9: GitHub PR Button ── */}
-            <GitHubPRButton />
-          </div>
-        ) : (
-          /* ================================================
-             FREE TIER — Usage Indicator
-             ================================================ */
-          <UsageIndicator />
-        )}
+        {/* Usage indicator for free users */}
+        {!isPro && <UsageIndicator />}
       </SidebarContent>
 
-      {/* ================================================
-          FOOTER — User Profile
-          ================================================ */}
-      <SidebarFooter className="mt-auto">
-        <Separator className="bg-sidebar-border/50" />
-        <div className="p-2">
-          <UserProfileDropdown />
-        </div>
+      <SidebarFooter className="mt-auto px-3 py-2.5 border-t border-border/20">
+        <UserProfileDropdown />
       </SidebarFooter>
 
-      {/* Rail for collapsed state hover */}
       <SidebarRail />
     </Sidebar>
   );

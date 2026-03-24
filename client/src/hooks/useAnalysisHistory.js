@@ -29,7 +29,14 @@ export function useAnalysisHistory() {
       })
 
       if (!res.ok) {
-        throw new Error('Failed to fetch history')
+        // Server error — degrade gracefully instead of blocking UI
+        console.warn(`[History] API returned ${res.status}, showing empty state`)
+        setAnalyses([])
+        // Only show error for non-500 errors (500 = likely DB not configured yet)
+        if (res.status !== 500) {
+          setError('Failed to fetch history')
+        }
+        return
       }
 
       const data = await res.json()
@@ -38,7 +45,9 @@ export function useAnalysisHistory() {
       setAnalyses(analysesData)
       cacheRef.current = { data: analysesData, timestamp: Date.now() }
     } catch (err) {
-      setError(err.message || 'Failed to load history')
+      // Network error or token error — degrade gracefully
+      console.warn('[History] Fetch failed:', err.message)
+      setAnalyses([])
     } finally {
       setIsLoading(false)
     }

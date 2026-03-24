@@ -109,7 +109,7 @@ function Navbar() {
           <div className="flex items-center justify-between h-full">
             {/* Left - Logo */}
             <Link to="/dashboard" className="flex items-center gap-2">
-              <ScanSearch className="w-8 h-8 text-purple-500" />
+              <img src="/logo.png" alt="AgentLens Logo" className="w-8 h-8 object-contain bg-transparent" />
               <div>
                 <h1 className="text-xl font-bold text-white leading-tight">
                   Agent

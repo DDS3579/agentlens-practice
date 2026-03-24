@@ -2,7 +2,7 @@ import Hero from '../components/landing/Hero.jsx'
 import Features from '../components/landing/Features.jsx'
 import HowItWorks from '../components/landing/HowItWorks.jsx'
 import Pricing from '../components/landing/Pricing.jsx'
-import Statistics from '../components/landing/Statistics.jsx'
+
 import { Link } from 'react-router-dom'
 import { Github, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -16,7 +16,7 @@ function Landing() {
           <div className="flex items-center justify-between h-full">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2">
-              <span className="text-2xl">🔍</span>
+              <img src="/logo.png" alt="AgentLens Logo" className="h-8 w-8 object-contain bg-transparent" />
               <span className="text-xl font-bold text-foreground">
                 Agent
                 <span className="bg-gradient-to-r from-purple-500 to-purple-400 bg-clip-text text-transparent">
@@ -83,10 +83,7 @@ function Landing() {
         <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       </div>
 
-      {/* Statistics Section */}
-      <div id="statistics" className="pt-8 pb-12 scroll-mt-24">
-        <Statistics />
-      </div>
+
 
       {/* Decorative Divider */}
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -105,7 +102,7 @@ function Landing() {
             {/* Logo & Tagline */}
             <div className="md:col-span-1">
               <Link to="/" className="flex items-center gap-2 mb-4">
-                <span className="text-2xl">🔍</span>
+                <img src="/logo.png" alt="AgentLens Logo" className="h-8 w-8 object-contain bg-transparent" />
                 <span className="text-xl font-bold text-foreground">
                   Agent
                   <span className="bg-gradient-to-r from-purple-500 to-purple-400 bg-clip-text text-transparent">

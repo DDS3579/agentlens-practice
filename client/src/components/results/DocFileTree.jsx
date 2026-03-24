@@ -152,7 +152,11 @@ function TreeNode({
         )}
 
         {/* Icon */}
-        <FileIcon className={`w-4 h-4 flex-shrink-0 ${iconColor}`} />
+        {isFolder ? (
+          <FileIcon className={`w-4 h-4 flex-shrink-0 ${iconColor}`} />
+        ) : (
+          <img src="/logo.png" alt="AgentLens Logo" className="w-4 h-4 object-contain" />
+        )}
 
         {/* Name */}
         <span 

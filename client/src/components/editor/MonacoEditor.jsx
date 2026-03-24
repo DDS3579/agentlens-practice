@@ -72,7 +72,7 @@ function MonacoEditor({
   const language = file?.language || getLanguage(filePath)
 
   const editorOptions = {
-    readOnly: !isPro,
+    readOnly: false,
     fontSize: 14,
     fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
     fontLigatures: true,
@@ -175,14 +175,14 @@ function MonacoEditor({
   }, [])
 
   return (
-    <div className="relative rounded-xl overflow-hidden border border-white/10 bg-[#0a0a0f]">
+    <div className="relative rounded-xl overflow-hidden border border-border/40 bg-background/60 backdrop-blur-xl shadow-xl">
       {/* Toolbar */}
       {showToolbar && (
-        <div className="flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-white/10">
+        <div className="flex items-center justify-between px-4 py-3 bg-muted/20 border-b border-border/40">
           {/* Left - File path & language */}
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="flex flex-wrap md:flex-nowrap items-center gap-3 min-w-0">
             <FileCode className="w-4 h-4 text-gray-500 flex-shrink-0" />
-            <span className="text-gray-300 text-sm font-mono truncate">
+            <span className="text-foreground/90 text-sm font-mono truncate tracking-tight">
               {filePath}
             </span>
             <Badge variant="outline" className="text-gray-500 border-gray-700 text-xs flex-shrink-0">
@@ -197,70 +197,40 @@ function MonacoEditor({
 
           {/* Right - Actions */}
           <div className="flex items-center gap-2">
-            {isPro ? (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCopy}
-                  className="text-gray-400 hover:text-white"
-                >
-                  {isCopied ? (
-                    <Check className="w-4 h-4 text-green-400" />
-                  ) : (
-                    <Copy className="w-4 h-4" />
-                  )}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleReset}
-                  disabled={!hasChanges}
-                  className="text-gray-400 hover:text-white disabled:opacity-50"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={handleSave}
-                  disabled={!hasChanges || isSaving}
-                  className={`${
-                    hasChanges
-                      ? 'bg-green-600 hover:bg-green-700 text-white'
-                      : 'bg-gray-800 text-gray-500'
-                  }`}
-                >
-                  <Save className="w-4 h-4 mr-1" />
-                  {isSaving ? 'Saving...' : 'Save'}
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCopy}
-                  className="text-gray-400 hover:text-white"
-                >
-                  {isCopied ? (
-                    <Check className="w-4 h-4 text-green-400" />
-                  ) : (
-                    <Copy className="w-4 h-4" />
-                  )}
-                </Button>
-                <Badge variant="outline" className="text-gray-500 border-gray-700">
-                  <Lock className="w-3 h-3 mr-1" />
-                  Read Only
-                </Badge>
-                <Button
-                  size="sm"
-                  onClick={onUpgradeClick}
-                  className="bg-purple-600 hover:bg-purple-700 text-white"
-                >
-                  Upgrade to Edit
-                </Button>
-              </>
-            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleCopy}
+              className="text-muted-foreground hover:bg-background/50 hover:text-foreground h-8"
+            >
+              {isCopied ? (
+                <Check className="w-4 h-4 text-green-500" />
+              ) : (
+                <Copy className="w-4 h-4" />
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleReset}
+              disabled={!hasChanges}
+              className="text-muted-foreground hover:bg-background/50 hover:text-foreground disabled:opacity-50 h-8"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSave}
+              disabled={!hasChanges || isSaving}
+              className={`h-8 transition-all ${
+                hasChanges
+                  ? 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-md'
+                  : 'bg-muted text-muted-foreground'
+              }`}
+            >
+              <Save className="w-4 h-4 mr-1.5" />
+              {isSaving ? 'Saving...' : 'Save File'}
+            </Button>
           </div>
         </div>
       )}
@@ -276,28 +246,13 @@ function MonacoEditor({
           onChange={handleChange}
           theme="vs-dark"
           loading={
-            <div className="flex items-center justify-center h-full bg-[#0a0a0f]">
-              <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+            <div className="flex items-center justify-center h-full bg-background/50 backdrop-blur-sm">
+              <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
             </div>
           }
         />
 
-        {/* Read-only overlay for free users */}
-        {!isPro && (
-          <div className="absolute bottom-0 left-0 right-0 bg-gray-950/90 border-t border-white/10 px-4 py-2 flex items-center justify-between">
-            <span className="text-gray-400 text-sm flex items-center gap-2">
-              <Lock className="w-4 h-4" />
-              🔒 Editing requires Pro plan
-            </span>
-            <Button
-              size="sm"
-              onClick={onUpgradeClick}
-              className="bg-purple-600 hover:bg-purple-700 text-white"
-            >
-              Upgrade
-            </Button>
-          </div>
-        )}
+        {/* Editor is always editable */}
       </div>
     </div>
   )

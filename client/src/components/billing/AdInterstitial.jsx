@@ -144,8 +144,8 @@ function AdInterstitial({ isOpen, onClose, onAdComplete }) {
                 {!adStarted ? (
                   // Pre-start state
                   <div className="text-center">
-                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-purple-500/30">
-                      <Code2 className="w-10 h-10 text-white" />
+                    <div className="w-20 h-20 flex items-center justify-center mx-auto mb-4">
+                      <img src="/logo.png" alt="AgentLens Logo" className="w-16 h-16 object-contain" />
                     </div>
                     <h4 className="text-xl font-bold text-white mb-2">
                       DevTools Pro
@@ -166,12 +166,12 @@ function AdInterstitial({ isOpen, onClose, onAdComplete }) {
                   <div className="text-center w-full">
                     {/* Fake product showcase */}
                     <div className="relative mb-6">
-                      <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center mx-auto shadow-xl shadow-purple-500/40 animate-pulse">
-                        <Code2 className="w-12 h-12 text-white" />
+                      <div className="w-24 h-24 flex items-center justify-center mx-auto mb-4">
+                        <img src="/logo.png" alt="AgentLens Logo" className="w-20 h-20 object-contain animate-pulse" />
                       </div>
                       {/* Floating elements for visual interest */}
                       <div className="absolute -top-2 -right-8 w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center animate-bounce">
-                        <Check className="w-4 h-4 text-green-400" />
+                        <img src="/logo.png" alt="AgentLens Logo" className="w-4 h-4 object-contain" />
                       </div>
                       <div className="absolute -bottom-2 -left-8 w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center animate-bounce delay-150">
                         <Shield className="w-4 h-4 text-blue-400" />
@@ -214,7 +214,7 @@ function AdInterstitial({ isOpen, onClose, onAdComplete }) {
                     </div>
                     {adComplete && (
                       <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                        <Check className="w-3 h-3 mr-1" />
+                        <img src="/logo.png" alt="AgentLens Logo" className="w-3 h-3 mr-1 object-contain" />
                         Ready
                       </Badge>
                     )}
@@ -277,8 +277,8 @@ function AdInterstitial({ isOpen, onClose, onAdComplete }) {
               
               <div className="relative">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
-                    <Zap className="w-6 h-6 text-white" />
+                  <div className="w-12 h-12 flex items-center justify-center">
+                    <img src="/logo.png" alt="AgentLens Logo" className="w-10 h-10 object-contain" />
                   </div>
                   <div>
                     <h4 className="text-xl font-bold text-white">AgentLens Pro</h4>

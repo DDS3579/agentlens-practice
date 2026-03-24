@@ -5,7 +5,8 @@ import { useAuth } from '@clerk/clerk-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Github, Zap, Shield, FileText, GitBranch, Cpu } from 'lucide-react';
-import Cube from '../../Cube';
+import Spline from '@splinetool/react-spline';
+import HeroCube from '@/Cube';
 
 // ─── Floating Code Snippets (Digital Rain) ──────────────────────────────────
 const CODE_SNIPPETS = [
@@ -377,7 +378,7 @@ const Hero = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.8 }}
         >
-          <Cube width="100%" height="100%" />
+          <HeroCube width="100%" height="100%" />
         </motion.div>
       </div>
 

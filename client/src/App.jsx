@@ -28,10 +28,16 @@ import History from './pages/History.jsx'
 import Settings from './pages/Settings.jsx'
 import Billing from './pages/Billing.jsx'
 import SavedAnalysis from './pages/SavedAnalysis.jsx'
+import CodeEditorPage from './pages/CodeEditorPage.jsx'
+import ResultsPage from './pages/ResultsPage.jsx'
+import FixAgentPage from './pages/FixAgentPage.jsx'
 
 // Route configuration for breadcrumbs
 const routeConfig = {
   "/dashboard": { title: "Dashboard", parent: null },
+  "/editor": { title: "Code Editor", parent: "/dashboard" },
+  "/results": { title: "Results", parent: "/dashboard" },
+  "/fix": { title: "Fix Agent", parent: "/dashboard" },
   "/history": { title: "History", parent: "/dashboard" },
   "/settings": { title: "Settings", parent: "/dashboard" },
   "/billing": { title: "Billing", parent: "/dashboard" },
@@ -263,6 +269,33 @@ function App() {
             element={
               <ProtectedRoute>
                 <AnimatedPage><Dashboard /></AnimatedPage>
+              </ProtectedRoute>
+            } 
+          />
+
+          <Route 
+            path="/editor" 
+            element={
+              <ProtectedRoute>
+                <AnimatedPage><CodeEditorPage /></AnimatedPage>
+              </ProtectedRoute>
+            } 
+          />
+
+          <Route 
+            path="/results" 
+            element={
+              <ProtectedRoute>
+                <AnimatedPage><ResultsPage /></AnimatedPage>
+              </ProtectedRoute>
+            } 
+          />
+
+          <Route 
+            path="/fix" 
+            element={
+              <ProtectedRoute>
+                <AnimatedPage><FixAgentPage /></AnimatedPage>
               </ProtectedRoute>
             } 
           />

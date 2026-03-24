@@ -12,7 +12,7 @@ const state = {
   openaiAvailable: null,
   anthropicAvailable: null,
   lastGroqFailure: null,
-  groqCooldownMs: 60000,
+  groqCooldownMs: 30000,
   totalCallCount: 0
 };
 

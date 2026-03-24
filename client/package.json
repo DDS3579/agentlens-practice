@@ -17,6 +17,8 @@
     "@monaco-editor/react": "^4.7.0",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
+    "@splinetool/react-spline": "^4.1.0",
+    "@splinetool/runtime": "^1.12.69",
     "@xyflow/react": "^12.10.1",
     "axios": "^1.13.6",
     "class-variance-authority": "^0.7.1",

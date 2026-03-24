@@ -801,8 +801,8 @@ export default function ProDocumentationTab({ sections }) {
                     }
                   `}
                 >
-                  <Icon className="w-4 h-4 flex-shrink-0" />
-                  <span className="truncate">{label}</span>
+                  <img src="/logo.png" alt="AgentLens Logo" className={`w-4 h-4 object-contain ${activeSection === id ? '' : 'opacity-50'}`} />
+                  {label}
                 </button>
               )
             })}
